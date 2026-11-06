@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Året i lys · Dagslysplakat-generator</title>
+<!-- Copyright (c) 2026 Arrodi (arrodi.pages.dev). MIT License. -->
+<style>
+  :root {
+    --bg-page: #040814;
+    --bg-card: #070c1a;
+    --bg-panel: #091124;
+    --border-card: #1e293b;
+    --border-focus: #3b82f6;
+    --text-page: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent-gold: #fceba4;
+    --accent-coral: #e07a5f;
+    --btn-primary: #1e3a8a;
+    --btn-primary-hover: #2563eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-page);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    max-width: 1240px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  header h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #f8fafc;
+    margin-bottom: 6px;
+  }
+  header p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+  }
+  .controls-panel {
+    width: 100%;
+    max-width: 1240px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    padding: 18px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  }
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr 1fr;
+    gap: 14px;
+    align-items: end;
+  }
+  @media (max-width: 1024px) {
+    .controls-grid {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+  @media (max-width: 640px) {
+    .controls-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .control-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .control-group input, .control-group select {
+    background: #0d172e;
+    color: #f8fafc;
+    border: 1px solid var(--border-card);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .control-group input:focus, .control-group select:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  }
+  .autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #0f1c38;
+    border: 1px solid #2d3e63;
+    border-radius: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    margin-top: 4px;
+  }
+  .autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #162444;
+  }
+  .autocomplete-item:hover, .autocomplete-item.active {
+    background: #1e3a8a;
+    color: #ffffff;
+  }
+  .buttons-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #16223f;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .btn {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+  }
+  .btn:hover {
+    background: #334155;
+    border-color: #475569;
+  }
+  .btn-primary {
+    background: var(--btn-primary);
+    border-color: #2563eb;
+  }
+  .btn-primary:hover {
+    background: var(--btn-primary-hover);
+  }
+  .poster-container {
+    width: 100%;
+    max-width: 1240px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    position: relative;
+  }
+  .poster-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+  }
+  .companion-section {
+    width: 100%;
+    max-width: 1240px;
+    margin-top: 36px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-card);
+    border-radius: 10px;
+    padding: 28px 32px;
+  }
+  .companion-section h2 {
+    color: var(--accent-gold);
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-card);
+    padding-bottom: 8px;
+  }
+  .companion-section h3 {
+    color: var(--text-page);
+    font-size: 1.1rem;
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+  .companion-section p, .companion-section li {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin-bottom: 8px;
+  }
+  .companion-section ul {
+    padding-left: 20px;
+    margin-bottom: 14px;
+  }
+  .badge-ai {
+    display: inline-block;
+    background: #1e3a8a;
+    color: #93c5fd;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  /* Print Stylesheet */
+/* print.css: Print stylesheet for The Year in Light (Året i lys 2027) */
+@page {
+  size: A2 landscape;
+  margin: 10mm;
+}
+
+@page a2 {
+  size: A2;
+  margin: 10mm;
+}
+
+@page a4 {
+  size: A4;
+  margin: 5mm;
+}
+
+@page {
+  size: A2;
+}
+
+@page {
+  size: A4;
+}
+
+@media print {
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #000000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .poster-container {
+    width: 100%;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+  .poster-svg, svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .companion-section {
+    page-break-before: always;
+    break-before: page;
+    background: #ffffff;
+    color: #111827;
+  }
+}
+
+  @page a3 {
+    size: A3 landscape;
+    margin: 8mm;
+  }
+  @media print {
+    header, .controls-panel, .buttons-row, .companion-section {
+      display: none !important;
+    }
+    body {
+      padding: 0 !important;
+      background: #000000 !important;
+    }
+    .poster-container {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      max-width: 100% !important;
+      background: transparent !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="page-title">ÅRET I LYS</h1>
+  <p id="page-subtitle">Dagslys, skumring, månefaser og årstider for et hvilket som helst sted på jorden</p>
+</header>
+
+<div class="controls-panel">
+  <div class="controls-grid">
+    <div class="control-group">
+      <label for="input-place" id="lbl-place">Sted / By (GeoNames)</label>
+      <input type="text" id="input-place" placeholder="F.eks. Tromsø, Bergen, Madrid..." autocomplete="off">
+      <div id="autocomplete-box" class="autocomplete-list"></div>
+    </div>
+    <div class="control-group">
+      <label for="input-lat" id="lbl-lat">Breddegrad (°N/S)</label>
+      <input type="number" id="input-lat" min="-90.0" max="90.0" step="0.01" value="69.65">
+    </div>
+    <div class="control-group">
+      <label for="input-lon" id="lbl-lon">Lengdegrad (°Ø/V)</label>
+      <input type="number" id="input-lon" min="-180.0" max="180.0" step="0.01" value="18.96">
+    </div>
+    <div class="control-group">
+      <label for="input-year" id="lbl-year">År</label>
+      <input type="number" id="input-year" min="1900" max="2100" step="1" value="2027">
+    </div>
+    <div class="control-group">
+      <label for="input-tz" id="lbl-tz">Tidssone (IANA / UTC)</label>
+      <input type="text" id="input-tz" value="Europe/Oslo" placeholder="F.eks. Europe/Oslo eller UTC+1">
+    </div>
+    <div class="control-group">
+      <label for="input-lang" id="lbl-lang">Språk</label>
+      <select id="input-lang">
+        <option value="nb" selected>Norsk (Bokmål)</option>
+        <option value="en">English</option>
+        <option value="sv">Svenska</option>
+        <option value="da">Dansk</option>
+        <option value="de">Deutsch</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="buttons-row">
+    <span id="status-indicator" style="font-size:0.85rem; color:#94a3b8; margin-right:auto;">Tromsø 2027 (Europe/Oslo)</span>
+    <button type="button" class="btn" id="btn-print" onclick="window.print()">
+      🖨️ <span id="txt-print">Skriv ut / PDF</span>
+    </button>
+    <button type="button" class="btn btn-primary" id="btn-png" onclick="downloadPng()">
+      📥 <span id="txt-png">Last ned PNG</span>
+    </button>
+  </div>
+</div>
+
+<div class="poster-container" id="poster-box">
+  <!-- Poster SVG will be rendered here dynamically -->
+</div>
+
+<canvas id="export-canvas" style="display:none;"></canvas>
+
+<div class="companion-section" id="meta-section"></div>
+
+<script>
+/* CITIES TABLE: GeoNames cities15000 subset (name, country, lat, lon, tz) */
+const CITIES = [["Tromsø", "NO", 69.65, 18.96, "Europe/Oslo"], ["Longyearbyen", "SJ", 78.22, 15.65, "Arctic/Longyearbyen"], ["Alta", "NO", 69.97, 23.27, "Europe/Oslo"], ["Hammerfest", "NO", 70.66, 23.68, "Europe/Oslo"], ["Vadsø", "NO", 70.07, 29.75, "Europe/Oslo"], ["Kirkenes", "NO", 69.73, 30.05, "Europe/Oslo"], ["Harstad", "NO", 68.8, 16.54, "Europe/Oslo"], ["Narvik", "NO", 68.44, 17.43, "Europe/Oslo"], ["Bodø", "NO", 67.28, 14.4, "Europe/Oslo"], ["Mo i Rana", "NO", 66.31, 14.14, "Europe/Oslo"], ["Mosjøen", "NO", 65.84, 13.19, "Europe/Oslo"], ["Sandnessjøen", "NO", 66.02, 12.63, "Europe/Oslo"], ["Brønnøysund", "NO", 65.46, 12.21, "Europe/Oslo"], ["Namsos", "NO", 64.47, 11.5, "Europe/Oslo"], ["Steinkjer", "NO", 64.01, 11.5, "Europe/Oslo"], ["Levanger", "NO", 63.75, 11.3, "Europe/Oslo"], ["Stjørdal", "NO", 63.47, 10.92, "Europe/Oslo"], ["Trondheim", "NO", 63.43, 10.39, "Europe/Oslo"], ["Kristiansund", "NO", 63.11, 7.73, "Europe/Oslo"], ["Molde", "NO", 62.74, 7.16, "Europe/Oslo"], ["Ålesund", "NO", 62.47, 6.15, "Europe/Oslo"], ["Førde", "NO", 61.45, 5.85, "Europe/Oslo"], ["Florø", "NO", 61.6, 5.03, "Europe/Oslo"], ["Bergen", "NO", 60.39, 5.32, "Europe/Oslo"], ["Askøy", "NO", 60.41, 5.17, "Europe/Oslo"], ["Leirvik", "NO", 59.78, 5.5, "Europe/Oslo"], ["Haugesund", "NO", 59.41, 5.27, "Europe/Oslo"], ["Kopervik", "NO", 59.28, 5.31, "Europe/Oslo"], ["Stavanger", "NO", 58.97, 5.73, "Europe/Oslo"], ["Sandnes", "NO", 58.85, 5.74, "Europe/Oslo"], ["Bryne", "NO", 58.73, 5.65, "Europe/Oslo"], ["Ålgård", "NO", 58.76, 5.85, "Europe/Oslo"], ["Egersund", "NO", 58.45, 6.0, "Europe/Oslo"], ["Flekkefjord", "NO", 58.3, 6.66, "Europe/Oslo"], ["Farsund", "NO", 58.1, 6.8, "Europe/Oslo"], ["Mandal", "NO", 58.03, 7.45, "Europe/Oslo"], ["Kristiansand", "NO", 58.15, 8.0, "Europe/Oslo"], ["Vennesla", "NO", 58.27, 7.97, "Europe/Oslo"], ["Grimstad", "NO", 58.34, 8.59, "Europe/Oslo"], ["Arendal", "NO", 58.46, 8.77, "Europe/Oslo"], ["Risør", "NO", 58.72, 9.24, "Europe/Oslo"], ["Kragerø", "NO", 58.87, 9.41, "Europe/Oslo"], ["Porsgrunn", "NO", 59.14, 9.66, "Europe/Oslo"], ["Skien", "NO", 59.21, 9.61, "Europe/Oslo"], ["Notodden", "NO", 59.56, 9.26, "Europe/Oslo"], ["Larvik", "NO", 59.05, 10.03, "Europe/Oslo"], ["Sandefjord", "NO", 59.13, 10.22, "Europe/Oslo"], ["Tønsberg", "NO", 59.27, 10.41, "Europe/Oslo"], ["Horten", "NO", 59.42, 10.48, "Europe/Oslo"], ["Holmestrand", "NO", 59.53, 10.32, "Europe/Oslo"], ["Drammen", "NO", 59.74, 10.2, "Europe/Oslo"], ["Kongsberg", "NO", 59.67, 9.65, "Europe/Oslo"], ["Hønefoss", "NO", 60.17, 10.26, "Europe/Oslo"], ["Oslo", "NO", 59.91, 10.75, "Europe/Oslo"], ["Bærum", "NO", 59.89, 10.53, "Europe/Oslo"], ["Asker", "NO", 59.83, 10.43, "Europe/Oslo"], ["Lillestrøm", "NO", 59.96, 11.05, "Europe/Oslo"], ["Lørenskog", "NO", 59.93, 10.96, "Europe/Oslo"], ["Ski", "NO", 59.72, 10.84, "Europe/Oslo"], ["Drøbak", "NO", 59.66, 10.63, "Europe/Oslo"], ["Jessheim", "NO", 60.14, 11.18, "Europe/Oslo"], ["Moss", "NO", 59.43, 10.66, "Europe/Oslo"], ["Fredrikstad", "NO", 59.22, 10.93, "Europe/Oslo"], ["Sarpsborg", "NO", 59.28, 11.11, "Europe/Oslo"], ["Halden", "NO", 59.12, 11.39, "Europe/Oslo"], ["Askim", "NO", 59.58, 11.16, "Europe/Oslo"], ["Kongsvinger", "NO", 60.19, 12.0, "Europe/Oslo"], ["Hamar", "NO", 60.8, 11.07, "Europe/Oslo"], ["Elverum", "NO", 60.88, 11.56, "Europe/Oslo"], ["Gjøvik", "NO", 60.79, 10.69, "Europe/Oslo"], ["Lillehammer", "NO", 61.12, 10.47, "Europe/Oslo"], ["Røros", "NO", 62.57, 11.38, "Europe/Oslo"], ["Kiruna", "SE", 67.86, 20.23, "Europe/Stockholm"], ["Gällivare", "SE", 67.13, 20.66, "Europe/Stockholm"], ["Boden", "SE", 65.83, 21.69, "Europe/Stockholm"], ["Luleå", "SE", 65.58, 22.15, "Europe/Stockholm"], ["Piteå", "SE", 65.32, 21.48, "Europe/Stockholm"], ["Skellefteå", "SE", 64.75, 20.95, "Europe/Stockholm"], ["Umeå", "SE", 63.83, 20.26, "Europe/Stockholm"], ["Örnsköldsvik", "SE", 63.29, 18.72, "Europe/Stockholm"], ["Härnösand", "SE", 62.63, 17.94, "Europe/Stockholm"], ["Sundsvall", "SE", 62.39, 17.31, "Europe/Stockholm"], ["Östersund", "SE", 63.18, 14.64, "Europe/Stockholm"], ["Hudiksvall", "SE", 61.73, 17.11, "Europe/Stockholm"], ["Söderhamn", "SE", 61.3, 17.06, "Europe/Stockholm"], ["Bollnäs", "SE", 61.35, 16.39, "Europe/Stockholm"], ["Gävle", "SE", 60.67, 17.14, "Europe/Stockholm"], ["Sandviken", "SE", 60.62, 16.78, "Europe/Stockholm"], ["Falun", "SE", 60.6, 15.63, "Europe/Stockholm"], ["Borlänge", "SE", 60.49, 15.43, "Europe/Stockholm"], ["Mora", "SE", 61.01, 14.54, "Europe/Stockholm"], ["Uppsala", "SE", 59.86, 17.64, "Europe/Stockholm"], ["Enköping", "SE", 59.64, 17.08, "Europe/Stockholm"], ["Västerås", "SE", 59.61, 16.54, "Europe/Stockholm"], ["Köping", "SE", 59.51, 15.99, "Europe/Stockholm"], ["Örebro", "SE", 59.27, 15.21, "Europe/Stockholm"], ["Karlskoga", "SE", 59.33, 14.52, "Europe/Stockholm"], ["Karlstad", "SE", 59.38, 13.5, "Europe/Stockholm"], ["Kristinehamn", "SE", 59.31, 14.11, "Europe/Stockholm"], ["Arvika", "SE", 59.65, 12.59, "Europe/Stockholm"], ["Stockholm", "SE", 59.33, 18.07, "Europe/Stockholm"], ["Solna", "SE", 59.36, 18.0, "Europe/Stockholm"], ["Sollentuna", "SE", 59.43, 17.95, "Europe/Stockholm"], ["Täby", "SE", 59.44, 18.07, "Europe/Stockholm"], ["Lidingö", "SE", 59.37, 18.14, "Europe/Stockholm"], ["Nacka", "SE", 59.32, 18.16, "Europe/Stockholm"], ["Huddinge", "SE", 59.24, 17.98, "Europe/Stockholm"], ["Södertälje", "SE", 59.2, 17.63, "Europe/Stockholm"], ["Eskilstuna", "SE", 59.37, 16.51, "Europe/Stockholm"], ["Nyköping", "SE", 58.75, 17.01, "Europe/Stockholm"], ["Katrineholm", "SE", 58.99, 16.21, "Europe/Stockholm"], ["Norrköping", "SE", 58.6, 16.18, "Europe/Stockholm"], ["Linköping", "SE", 58.41, 15.62, "Europe/Stockholm"], ["Motala", "SE", 58.54, 15.04, "Europe/Stockholm"], ["Mjölby", "SE", 58.33, 15.13, "Europe/Stockholm"], ["Jönköping", "SE", 57.78, 14.16, "Europe/Stockholm"], ["Nässjö", "SE", 57.65, 14.7, "Europe/Stockholm"], ["Värnamo", "SE", 57.18, 14.04, "Europe/Stockholm"], ["Växjö", "SE", 56.88, 14.81, "Europe/Stockholm"], ["Ljungby", "SE", 56.83, 13.94, "Europe/Stockholm"], ["Kalmar", "SE", 56.66, 16.36, "Europe/Stockholm"], ["Oskarshamn", "SE", 57.26, 16.45, "Europe/Stockholm"], ["Västervik", "SE", 57.76, 16.64, "Europe/Stockholm"], ["Visby", "SE", 57.64, 18.3, "Europe/Stockholm"], ["Karlskrona", "SE", 56.16, 15.59, "Europe/Stockholm"], ["Karlshamn", "SE", 56.17, 14.86, "Europe/Stockholm"], ["Ronneby", "SE", 56.21, 15.28, "Europe/Stockholm"], ["Kristianstad", "SE", 56.03, 14.16, "Europe/Stockholm"], ["Hässleholm", "SE", 56.16, 13.77, "Europe/Stockholm"], ["Halmstad", "SE", 56.67, 12.86, "Europe/Stockholm"], ["Falkenberg", "SE", 56.91, 12.49, "Europe/Stockholm"], ["Varberg", "SE", 57.11, 12.25, "Europe/Stockholm"], ["Kungsbacka", "SE", 57.49, 12.08, "Europe/Stockholm"], ["Göteborg", "SE", 57.71, 11.97, "Europe/Stockholm"], ["Mölndal", "SE", 57.66, 12.01, "Europe/Stockholm"], ["Partille", "SE", 57.74, 12.1, "Europe/Stockholm"], ["Borås", "SE", 57.72, 12.94, "Europe/Stockholm"], ["Alingsås", "SE", 57.93, 12.53, "Europe/Stockholm"], ["Trollhättan", "SE", 58.28, 12.29, "Europe/Stockholm"], ["Vänersborg", "SE", 58.38, 12.32, "Europe/Stockholm"], ["Uddevalla", "SE", 58.35, 11.94, "Europe/Stockholm"], ["Skövde", "SE", 58.39, 13.85, "Europe/Stockholm"], ["Lidköping", "SE", 58.5, 13.16, "Europe/Stockholm"], ["Helsingborg", "SE", 56.05, 12.69, "Europe/Stockholm"], ["Ängelholm", "SE", 56.24, 12.86, "Europe/Stockholm"], ["Landskrona", "SE", 55.87, 12.83, "Europe/Stockholm"], ["Lund", "SE", 55.7, 13.19, "Europe/Stockholm"], ["Malmö", "SE", 55.6, 13.0, "Europe/Stockholm"], ["Trelleborg", "SE", 55.38, 13.16, "Europe/Stockholm"], ["Ystad", "SE", 55.43, 13.82, "Europe/Stockholm"], ["København", "DK", 55.68, 12.57, "Europe/Copenhagen"], ["Frederiksberg", "DK", 55.68, 12.53, "Europe/Copenhagen"], ["Aarhus", "DK", 56.16, 10.2, "Europe/Copenhagen"], ["Odense", "DK", 55.4, 10.4, "Europe/Copenhagen"], ["Aalborg", "DK", 57.05, 9.92, "Europe/Copenhagen"], ["Esbjerg", "DK", 55.47, 8.45, "Europe/Copenhagen"], ["Randers", "DK", 56.46, 10.04, "Europe/Copenhagen"], ["Kolding", "DK", 55.49, 9.47, "Europe/Copenhagen"], ["Horsens", "DK", 55.86, 9.85, "Europe/Copenhagen"], ["Vejle", "DK", 55.71, 9.54, "Europe/Copenhagen"], ["Roskilde", "DK", 55.64, 12.08, "Europe/Copenhagen"], ["Herning", "DK", 56.14, 8.97, "Europe/Copenhagen"], ["Hørsholm", "DK", 55.88, 12.5, "Europe/Copenhagen"], ["Helsingør", "DK", 56.04, 12.61, "Europe/Copenhagen"], ["Silkeborg", "DK", 56.17, 9.55, "Europe/Copenhagen"], ["Næstved", "DK", 55.23, 11.76, "Europe/Copenhagen"], ["Fredericia", "DK", 55.56, 9.75, "Europe/Copenhagen"], ["Viborg", "DK", 56.45, 9.4, "Europe/Copenhagen"], ["Køge", "DK", 55.46, 12.18, "Europe/Copenhagen"], ["Holstebro", "DK", 56.36, 8.62, "Europe/Copenhagen"], ["Taastrup", "DK", 55.65, 12.3, "Europe/Copenhagen"], ["Slagelse", "DK", 55.4, 11.35, "Europe/Copenhagen"], ["Hillerød", "DK", 55.93, 12.31, "Europe/Copenhagen"], ["Sønderborg", "DK", 54.91, 9.79, "Europe/Copenhagen"], ["Svendborg", "DK", 55.06, 10.61, "Europe/Copenhagen"], ["Hjørring", "DK", 57.46, 9.98, "Europe/Copenhagen"], ["Frederikshavn", "DK", 57.44, 10.53, "Europe/Copenhagen"], ["Haderslev", "DK", 55.25, 9.49, "Europe/Copenhagen"], ["Skive", "DK", 56.57, 9.03, "Europe/Copenhagen"], ["Rønne", "DK", 55.1, 14.7, "Europe/Copenhagen"], ["Helsinki", "FI", 60.17, 24.94, "Europe/Helsinki"], ["Espoo", "FI", 60.21, 24.66, "Europe/Helsinki"], ["Tampere", "FI", 61.5, 23.79, "Europe/Helsinki"], ["Vantaa", "FI", 60.3, 25.04, "Europe/Helsinki"], ["Oulu", "FI", 65.01, 25.47, "Europe/Helsinki"], ["Turku", "FI", 60.45, 22.27, "Europe/Helsinki"], ["Jyväskylä", "FI", 62.24, 25.75, "Europe/Helsinki"], ["Lahti", "FI", 60.98, 25.66, "Europe/Helsinki"], ["Kuopio", "FI", 62.89, 27.68, "Europe/Helsinki"], ["Pori", "FI", 61.48, 21.8, "Europe/Helsinki"], ["Kouvola", "FI", 60.87, 26.7, "Europe/Helsinki"], ["Joensuu", "FI", 62.6, 29.76, "Europe/Helsinki"], ["Lappeenranta", "FI", 61.06, 28.19, "Europe/Helsinki"], ["Hämeenlinna", "FI", 61.0, 24.46, "Europe/Helsinki"], ["Vaasa", "FI", 63.1, 21.62, "Europe/Helsinki"], ["Rovaniemi", "FI", 66.5, 25.73, "Europe/Helsinki"], ["Seinäjoki", "FI", 62.79, 22.84, "Europe/Helsinki"], ["Mikkeli", "FI", 61.69, 27.27, "Europe/Helsinki"], ["Kotka", "FI", 60.47, 26.95, "Europe/Helsinki"], ["Salo", "FI", 60.38, 23.13, "Europe/Helsinki"], ["Porvoo", "FI", 60.39, 25.67, "Europe/Helsinki"], ["Kokkola", "FI", 63.84, 23.13, "Europe/Helsinki"], ["Kajaani", "FI", 64.23, 27.73, "Europe/Helsinki"], ["Ivalo", "FI", 68.66, 27.54, "Europe/Helsinki"], ["Reykjavík", "IS", 64.15, -21.94, "Atlantic/Reykjavik"], ["Kópavogur", "IS", 64.11, -21.91, "Atlantic/Reykjavik"], ["Hafnarfjörður", "IS", 64.07, -21.95, "Atlantic/Reykjavik"], ["Akureyri", "IS", 65.68, -18.09, "Atlantic/Reykjavik"], ["Tórshavn", "FO", 62.01, -6.77, "Atlantic/Faroe"], ["Klaksvík", "FO", 62.23, -6.58, "Atlantic/Faroe"], ["Nuuk", "GL", 64.18, -51.72, "America/Nuuk"], ["Sisimiut", "GL", 66.94, -53.67, "America/Nuuk"], ["Ilulissat", "GL", 69.22, -51.1, "America/Nuuk"], ["London", "GB", 51.51, -0.13, "Europe/London"], ["Birmingham", "GB", 52.48, -1.9, "Europe/London"], ["Manchester", "GB", 53.48, -2.24, "Europe/London"], ["Glasgow", "GB", 55.86, -4.25, "Europe/London"], ["Edinburgh", "GB", 55.95, -3.19, "Europe/London"], ["Liverpool", "GB", 53.41, -2.99, "Europe/London"], ["Bristol", "GB", 51.45, -2.59, "Europe/London"], ["Sheffield", "GB", 53.38, -1.47, "Europe/London"], ["Leeds", "GB", 53.8, -1.55, "Europe/London"], ["Newcastle upon Tyne", "GB", 54.98, -1.61, "Europe/London"], ["Belfast", "GB", 54.6, -5.93, "Europe/London"], ["Cardiff", "GB", 51.48, -3.18, "Europe/London"], ["Aberdeen", "GB", 57.15, -2.1, "Europe/London"], ["Dundee", "GB", 56.46, -2.97, "Europe/London"], ["Inverness", "GB", 57.48, -4.22, "Europe/London"], ["Lerwick", "GB", 60.15, -1.15, "Europe/London"], ["Dublin", "IE", 53.35, -6.26, "Europe/Dublin"], ["Cork", "IE", 51.9, -8.47, "Europe/Dublin"], ["Galway", "IE", 53.27, -9.05, "Europe/Dublin"], ["Limerick", "IE", 52.66, -8.62, "Europe/Dublin"], ["Berlin", "DE", 52.52, 13.4, "Europe/Berlin"], ["Hamburg", "DE", 53.55, 9.99, "Europe/Berlin"], ["München", "DE", 48.14, 11.58, "Europe/Berlin"], ["Köln", "DE", 50.94, 6.96, "Europe/Berlin"], ["Frankfurt am Main", "DE", 50.11, 8.68, "Europe/Berlin"], ["Stuttgart", "DE", 48.78, 9.18, "Europe/Berlin"], ["Düsseldorf", "DE", 51.23, 6.78, "Europe/Berlin"], ["Leipzig", "DE", 51.34, 12.37, "Europe/Berlin"], ["Dortmund", "DE", 51.51, 7.47, "Europe/Berlin"], ["Essen", "DE", 51.46, 7.01, "Europe/Berlin"], ["Bremen", "DE", 53.08, 8.8, "Europe/Berlin"], ["Dresden", "DE", 51.05, 13.74, "Europe/Berlin"], ["Hannover", "DE", 52.37, 9.73, "Europe/Berlin"], ["Nürnberg", "DE", 49.45, 11.08, "Europe/Berlin"], ["Duisburg", "DE", 51.43, 6.76, "Europe/Berlin"], ["Bochum", "DE", 51.48, 7.22, "Europe/Berlin"], ["Wuppertal", "DE", 51.26, 7.15, "Europe/Berlin"], ["Bielefeld", "DE", 52.02, 8.53, "Europe/Berlin"], ["Bonn", "DE", 50.73, 7.1, "Europe/Berlin"], ["Münster", "DE", 51.96, 7.63, "Europe/Berlin"], ["Karlsruhe", "DE", 49.01, 8.4, "Europe/Berlin"], ["Mannheim", "DE", 49.49, 8.47, "Europe/Berlin"], ["Augsburg", "DE", 48.37, 10.9, "Europe/Berlin"], ["Wiesbaden", "DE", 50.08, 8.24, "Europe/Berlin"], ["Gelsenkirchen", "DE", 51.52, 7.1, "Europe/Berlin"], ["Mönchengladbach", "DE", 51.19, 6.44, "Europe/Berlin"], ["Braunschweig", "DE", 52.27, 10.53, "Europe/Berlin"], ["Kiel", "DE", 54.32, 10.14, "Europe/Berlin"], ["Chemnitz", "DE", 50.83, 12.92, "Europe/Berlin"], ["Aachen", "DE", 50.78, 6.08, "Europe/Berlin"], ["Halle (Saale)", "DE", 51.48, 11.97, "Europe/Berlin"], ["Magdeburg", "DE", 52.13, 11.63, "Europe/Berlin"], ["Freiburg im Breisgau", "DE", 47.99, 7.85, "Europe/Berlin"], ["Krefeld", "DE", 51.33, 6.56, "Europe/Berlin"], ["Mainz", "DE", 50.0, 8.27, "Europe/Berlin"], ["Lübeck", "DE", 53.87, 10.69, "Europe/Berlin"], ["Erfurt", "DE", 50.98, 11.03, "Europe/Berlin"], ["Oberhausen", "DE", 51.47, 6.85, "Europe/Berlin"], ["Rostock", "DE", 54.09, 12.13, "Europe/Berlin"], ["Kassel", "DE", 51.32, 9.5, "Europe/Berlin"], ["Potsdam", "DE", 52.4, 13.07, "Europe/Berlin"], ["Saarbrücken", "DE", 49.23, 7.0, "Europe/Berlin"], ["Flensburg", "DE", 54.79, 9.44, "Europe/Berlin"], ["Madrid", "ES", 40.42, -3.7, "Europe/Madrid"], ["Barcelona", "ES", 41.39, 2.17, "Europe/Madrid"], ["Valencia", "ES", 39.47, -0.38, "Europe/Madrid"], ["Sevilla", "ES", 37.39, -5.99, "Europe/Madrid"], ["Zaragoza", "ES", 41.65, -0.88, "Europe/Madrid"], ["Málaga", "ES", 36.72, -4.42, "Europe/Madrid"], ["Murcia", "ES", 37.99, -1.13, "Europe/Madrid"], ["Palma", "ES", 39.57, 2.65, "Europe/Madrid"], ["Las Palmas de Gran Canaria", "ES", 28.12, -15.43, "Atlantic/Canary"], ["Bilbao", "ES", 43.26, -2.93, "Europe/Madrid"], ["Alicante", "ES", 38.35, -0.48, "Europe/Madrid"], ["Córdoba", "ES", 37.89, -4.78, "Europe/Madrid"], ["Valladolid", "ES", 41.65, -4.72, "Europe/Madrid"], ["Vigo", "ES", 42.23, -8.72, "Europe/Madrid"], ["Gijón", "ES", 43.54, -5.66, "Europe/Madrid"], ["A Coruña", "ES", 43.37, -8.41, "Europe/Madrid"], ["Vitoria-Gasteiz", "ES", 42.85, -2.67, "Europe/Madrid"], ["Granada", "ES", 37.18, -3.6, "Europe/Madrid"], ["Elche", "ES", 38.27, -0.7, "Europe/Madrid"], ["Oviedo", "ES", 43.36, -5.84, "Europe/Madrid"], ["Badalona", "ES", 41.45, 2.25, "Europe/Madrid"], ["Cartagena", "ES", 37.6, -0.98, "Europe/Madrid"], ["Terrassa", "ES", 41.56, 2.01, "Europe/Madrid"], ["Jerez de la Frontera", "ES", 36.69, -6.14, "Europe/Madrid"], ["Sabadell", "ES", 41.54, 2.11, "Europe/Madrid"], ["Santa Cruz de Tenerife", "ES", 28.47, -16.25, "Atlantic/Canary"], ["Pamplona", "ES", 42.82, -1.64, "Europe/Madrid"], ["Almería", "ES", 36.84, -2.46, "Europe/Madrid"], ["San Sebastián", "ES", 43.32, -1.98, "Europe/Madrid"], ["Burgos", "ES", 42.34, -3.7, "Europe/Madrid"], ["Santander", "ES", 43.46, -3.81, "Europe/Madrid"], ["Castellón de la Plana", "ES", 39.99, -0.05, "Europe/Madrid"], ["Salamanca", "ES", 40.97, -5.66, "Europe/Madrid"], ["Santiago de Compostela", "ES", 42.88, -8.54, "Europe/Madrid"], ["Cádiz", "ES", 36.53, -6.3, "Europe/Madrid"], ["Toledo", "ES", 39.86, -4.02, "Europe/Madrid"], ["Paris", "FR", 48.86, 2.35, "Europe/Paris"], ["Marseille", "FR", 43.3, 5.37, "Europe/Paris"], ["Lyon", "FR", 45.76, 4.84, "Europe/Paris"], ["Toulouse", "FR", 43.6, 1.44, "Europe/Paris"], ["Nice", "FR", 43.71, 7.26, "Europe/Paris"], ["Nantes", "FR", 47.22, -1.55, "Europe/Paris"], ["Montpellier", "FR", 43.61, 3.88, "Europe/Paris"], ["Strasbourg", "FR", 48.57, 7.75, "Europe/Paris"], ["Bordeaux", "FR", 44.84, -0.58, "Europe/Paris"], ["Lille", "FR", 50.63, 3.06, "Europe/Paris"], ["Rennes", "FR", 48.11, -1.68, "Europe/Paris"], ["Reims", "FR", 49.26, 4.03, "Europe/Paris"], ["Saint-Étienne", "FR", 45.43, 4.39, "Europe/Paris"], ["Toulon", "FR", 43.12, 5.93, "Europe/Paris"], ["Le Havre", "FR", 49.49, 0.11, "Europe/Paris"], ["Grenoble", "FR", 45.19, 5.72, "Europe/Paris"], ["Brest", "FR", 48.39, -4.49, "Europe/Paris"], ["Brussels", "BE", 50.85, 4.35, "Europe/Brussels"], ["Antwerpen", "BE", 51.22, 4.4, "Europe/Brussels"], ["Gent", "BE", 51.05, 3.73, "Europe/Brussels"], ["Charleroi", "BE", 50.41, 4.44, "Europe/Brussels"], ["Liège", "BE", 50.63, 5.57, "Europe/Brussels"], ["Brugge", "BE", 51.21, 3.22, "Europe/Brussels"], ["Amsterdam", "NL", 52.37, 4.89, "Europe/Amsterdam"], ["Rotterdam", "NL", 51.92, 4.48, "Europe/Amsterdam"], ["The Hague", "NL", 52.08, 4.3, "Europe/Amsterdam"], ["Utrecht", "NL", 52.09, 5.12, "Europe/Amsterdam"], ["Eindhoven", "NL", 51.44, 5.48, "Europe/Amsterdam"], ["Groningen", "NL", 53.22, 6.57, "Europe/Amsterdam"], ["Luxembourg", "LU", 49.61, 6.13, "Europe/Luxembourg"], ["Zürich", "CH", 47.38, 8.54, "Europe/Zurich"], ["Geneva", "CH", 46.2, 6.14, "Europe/Zurich"], ["Basel", "CH", 47.56, 7.59, "Europe/Zurich"], ["Bern", "CH", 46.95, 7.45, "Europe/Zurich"], ["Lausanne", "CH", 46.52, 6.63, "Europe/Zurich"], ["Lugano", "CH", 46.0, 8.95, "Europe/Zurich"], ["Wien", "AT", 48.21, 16.37, "Europe/Vienna"], ["Graz", "AT", 47.07, 15.44, "Europe/Vienna"], ["Linz", "AT", 48.31, 14.29, "Europe/Vienna"], ["Salzburg", "AT", 47.8, 13.04, "Europe/Vienna"], ["Innsbruck", "AT", 47.27, 11.4, "Europe/Vienna"], ["Roma", "IT", 41.9, 12.5, "Europe/Rome"], ["Milano", "IT", 45.46, 9.19, "Europe/Rome"], ["Napoli", "IT", 40.85, 14.27, "Europe/Rome"], ["Torino", "IT", 45.07, 7.69, "Europe/Rome"], ["Palermo", "IT", 38.12, 13.36, "Europe/Rome"], ["Genova", "IT", 44.41, 8.93, "Europe/Rome"], ["Bologna", "IT", 44.49, 11.34, "Europe/Rome"], ["Firenze", "IT", 43.77, 11.26, "Europe/Rome"], ["Bari", "IT", 41.12, 16.87, "Europe/Rome"], ["Catania", "IT", 37.5, 15.09, "Europe/Rome"], ["Venezia", "IT", 45.44, 12.33, "Europe/Rome"], ["Verona", "IT", 45.44, 10.99, "Europe/Rome"], ["Trieste", "IT", 45.65, 13.78, "Europe/Rome"], ["Lisboa", "PT", 38.72, -9.14, "Europe/Lisbon"], ["Porto", "PT", 41.16, -8.63, "Europe/Lisbon"], ["Funchal", "PT", 32.65, -16.91, "Atlantic/Madeira"], ["Ponta Delgada", "PT", 37.74, -25.67, "Atlantic/Azores"], ["Faro", "PT", 37.02, -7.93, "Europe/Lisbon"], ["Coimbra", "PT", 40.21, -8.43, "Europe/Lisbon"], ["Warszawa", "PL", 52.23, 21.01, "Europe/Warsaw"], ["Kraków", "PL", 50.06, 19.94, "Europe/Warsaw"], ["Łódź", "PL", 51.76, 19.46, "Europe/Warsaw"], ["Wrocław", "PL", 51.11, 17.04, "Europe/Warsaw"], ["Poznań", "PL", 52.41, 16.93, "Europe/Warsaw"], ["Gdańsk", "PL", 54.35, 18.65, "Europe/Warsaw"], ["Szczecin", "PL", 53.43, 14.55, "Europe/Warsaw"], ["Praha", "CZ", 50.08, 14.44, "Europe/Prague"], ["Brno", "CZ", 49.2, 16.61, "Europe/Prague"], ["Ostrava", "CZ", 49.83, 18.28, "Europe/Prague"], ["Bratislava", "SK", 48.15, 17.11, "Europe/Bratislava"], ["Budapest", "HU", 47.5, 19.04, "Europe/Budapest"], ["Debrecen", "HU", 47.53, 21.63, "Europe/Budapest"], ["București", "RO", 44.43, 26.1, "Europe/Bucharest"], ["Cluj-Napoca", "RO", 46.77, 23.6, "Europe/Bucharest"], ["Timișoara", "RO", 45.75, 21.23, "Europe/Bucharest"], ["Iași", "RO", 47.16, 27.58, "Europe/Bucharest"], ["Sofiya", "BG", 42.7, 23.32, "Europe/Sofia"], ["Plovdiv", "BG", 42.14, 24.75, "Europe/Sofia"], ["Varna", "BG", 43.21, 27.92, "Europe/Sofia"], ["Beograd", "RS", 44.82, 20.46, "Europe/Belgrade"], ["Zagreb", "HR", 45.81, 15.98, "Europe/Zagreb"], ["Split", "HR", 43.51, 16.44, "Europe/Zagreb"], ["Dubrovnik", "HR", 42.65, 18.09, "Europe/Zagreb"], ["Ljubljana", "SI", 46.06, 14.51, "Europe/Ljubljana"], ["Sarajevo", "BA", 43.86, 18.41, "Europe/Sarajevo"], ["Skopje", "MK", 42.0, 21.43, "Europe/Skopje"], ["Tirana", "AL", 41.33, 19.82, "Europe/Tirane"], ["Athina", "GR", 37.98, 23.73, "Europe/Athens"], ["Thessaloniki", "GR", 40.64, 22.94, "Europe/Athens"], ["Heraklion", "GR", 35.34, 25.14, "Europe/Athens"], ["Kyiv", "UA", 50.45, 30.52, "Europe/Kyiv"], ["Kharkiv", "UA", 50.0, 36.23, "Europe/Kyiv"], ["Odesa", "UA", 46.48, 30.73, "Europe/Kyiv"], ["Dnipro", "UA", 48.46, 35.04, "Europe/Kyiv"], ["Lviv", "UA", 49.84, 24.03, "Europe/Kyiv"], ["Tallinn", "EE", 59.44, 24.75, "Europe/Tallinn"], ["Tartu", "EE", 58.38, 26.73, "Europe/Tallinn"], ["Rīga", "LV", 56.95, 24.11, "Europe/Riga"], ["Vilnius", "LT", 54.69, 25.28, "Europe/Vilnius"], ["Kaunas", "LT", 54.9, 23.9, "Europe/Vilnius"], ["Klaipėda", "LT", 55.7, 21.14, "Europe/Vilnius"], ["New York", "US", 40.71, -74.01, "America/New_York"], ["Los Angeles", "US", 34.05, -118.24, "America/Los_Angeles"], ["Chicago", "US", 41.88, -87.63, "America/Chicago"], ["Houston", "US", 29.76, -95.37, "America/Chicago"], ["Phoenix", "US", 33.45, -112.07, "America/Phoenix"], ["Philadelphia", "US", 39.95, -75.17, "America/New_York"], ["San Antonio", "US", 29.42, -98.49, "America/Chicago"], ["San Diego", "US", 32.72, -117.16, "America/Los_Angeles"], ["Dallas", "US", 32.78, -96.8, "America/Chicago"], ["San Jose", "US", 37.34, -121.89, "America/Los_Angeles"], ["Austin", "US", 30.27, -97.74, "America/Chicago"], ["Jacksonville", "US", 30.33, -81.66, "America/New_York"], ["San Francisco", "US", 37.77, -122.42, "America/Los_Angeles"], ["Columbus", "US", 39.96, -83.0, "America/New_York"], ["Indianapolis", "US", 39.77, -86.16, "America/Indiana/Indianapolis"], ["Seattle", "US", 47.61, -122.33, "America/Los_Angeles"], ["Denver", "US", 39.74, -104.99, "America/Denver"], ["Washington, D.C.", "US", 38.91, -77.04, "America/New_York"], ["Boston", "US", 42.36, -71.06, "America/New_York"], ["El Paso", "US", 31.76, -106.49, "America/Denver"], ["Nashville", "US", 36.16, -86.78, "America/Chicago"], ["Detroit", "US", 42.33, -83.05, "America/New_York"], ["Portland", "US", 45.52, -122.68, "America/Los_Angeles"], ["Las Vegas", "US", 36.17, -115.14, "America/Los_Angeles"], ["Memphis", "US", 35.15, -90.05, "America/Chicago"], ["Louisville", "US", 38.25, -85.76, "America/Kentucky/Louisville"], ["Baltimore", "US", 39.29, -76.61, "America/New_York"], ["Milwaukee", "US", 43.04, -87.91, "America/Chicago"], ["Albuquerque", "US", 35.09, -106.65, "America/Denver"], ["Tucson", "US", 32.22, -110.97, "America/Phoenix"], ["Fresno", "US", 36.75, -119.77, "America/Los_Angeles"], ["Sacramento", "US", 38.58, -121.49, "America/Los_Angeles"], ["Kansas City", "US", 39.1, -94.58, "America/Chicago"], ["Atlanta", "US", 33.75, -84.39, "America/New_York"], ["Miami", "US", 25.76, -80.19, "America/New_York"], ["Raleigh", "US", 35.78, -78.64, "America/New_York"], ["Omaha", "US", 41.26, -95.94, "America/Chicago"], ["Minneapolis", "US", 44.98, -93.27, "America/Chicago"], ["New Orleans", "US", 29.95, -90.07, "America/Chicago"], ["Cleveland", "US", 41.5, -81.69, "America/New_York"], ["Honolulu", "US", 21.31, -157.86, "Pacific/Honolulu"], ["Anchorage", "US", 61.22, -149.9, "America/Anchorage"], ["Fairbanks", "US", 64.84, -147.72, "America/Anchorage"], ["Juneau", "US", 58.3, -134.42, "America/Juneau"], ["Utqiagvik (Barrow)", "US", 71.29, -156.79, "America/Anchorage"], ["Toronto", "CA", 43.65, -79.38, "America/Toronto"], ["Montreal", "CA", 45.5, -73.57, "America/Toronto"], ["Vancouver", "CA", 49.28, -123.12, "America/Vancouver"], ["Calgary", "CA", 51.05, -114.07, "America/Edmonton"], ["Edmonton", "CA", 53.55, -113.49, "America/Edmonton"], ["Ottawa", "CA", 45.42, -75.7, "America/Toronto"], ["Winnipeg", "CA", 49.9, -97.14, "America/Winnipeg"], ["Quebec City", "CA", 46.81, -71.21, "America/Toronto"], ["Halifax", "CA", 44.65, -63.58, "America/Halifax"], ["Victoria", "CA", 48.43, -123.37, "America/Vancouver"], ["Saskatoon", "CA", 52.13, -106.67, "America/Regina"], ["Regina", "CA", 50.45, -104.62, "America/Regina"], ["St. John's", "CA", 47.56, -52.71, "America/St_Johns"], ["Whitehorse", "CA", 60.72, -135.05, "America/Whitehorse"], ["Yellowknife", "CA", 62.45, -114.37, "America/Yellowknife"], ["Iqaluit", "CA", 63.75, -68.52, "America/Iqaluit"], ["Ciudad de México", "MX", 19.43, -99.13, "America/Mexico_City"], ["Guadalajara", "MX", 20.67, -103.35, "America/Mexico_City"], ["Monterrey", "MX", 25.69, -100.32, "America/Monterrey"], ["Puebla", "MX", 19.04, -98.21, "America/Mexico_City"], ["Tijuana", "MX", 32.53, -117.02, "America/Tijuana"], ["León", "MX", 21.12, -101.68, "America/Mexico_City"], ["Cancún", "MX", 21.16, -86.85, "America/Cancun"], ["Havana", "CU", 23.11, -82.37, "America/Havana"], ["Santo Domingo", "DO", 18.49, -69.93, "America/Santo_Domingo"], ["San Juan", "PR", 18.47, -66.11, "America/Puerto_Rico"], ["Guatemala City", "GT", 14.63, -90.51, "America/Guatemala"], ["San José", "CR", 9.93, -84.08, "America/Costa_Rica"], ["Panama City", "PA", 8.98, -79.52, "America/Panama"], ["Bogotá", "CO", 4.71, -74.07, "America/Bogota"], ["Medellín", "CO", 6.25, -75.56, "America/Bogota"], ["Cali", "CO", 3.45, -76.53, "America/Bogota"], ["Barranquilla", "CO", 10.96, -74.8, "America/Bogota"], ["Cartagena", "CO", 10.4, -75.51, "America/Bogota"], ["Caracas", "VE", 10.49, -66.88, "America/Caracas"], ["Maracaibo", "VE", 10.64, -71.64, "America/Caracas"], ["Quito", "EC", -0.18, -78.47, "America/Guayaquil"], ["Guayaquil", "EC", -2.19, -79.89, "America/Guayaquil"], ["Lima", "PE", -12.05, -77.04, "America/Lima"], ["Arequipa", "PE", -16.4, -71.54, "America/Lima"], ["Cusco", "PE", -13.53, -71.97, "America/Lima"], ["La Paz", "BO", -16.5, -68.12, "America/La_Paz"], ["Santa Cruz de la Sierra", "BO", -17.78, -63.18, "America/La_Paz"], ["Santiago", "CL", -33.45, -70.67, "America/Santiago"], ["Valparaíso", "CL", -33.05, -71.62, "America/Santiago"], ["Concepción", "CL", -36.83, -73.05, "America/Santiago"], ["Antofagasta", "CL", -23.65, -70.4, "America/Santiago"], ["Puerto Montt", "CL", -41.47, -72.94, "America/Santiago"], ["Punta Arenas", "CL", -53.16, -70.91, "America/Punta_Arenas"], ["Buenos Aires", "AR", -34.6, -58.38, "America/Argentina/Buenos_Aires"], ["Córdoba", "AR", -31.42, -64.19, "America/Argentina/Cordoba"], ["Rosario", "AR", -32.95, -60.64, "America/Argentina/Cordoba"], ["Mendoza", "AR", -32.89, -68.85, "America/Argentina/Mendoza"], ["San Carlos de Bariloche", "AR", -41.13, -71.31, "America/Argentina/Salta"], ["Ushuaia", "AR", -54.8, -68.3, "America/Argentina/Ushuaia"], ["Montevideo", "UY", -34.9, -56.16, "America/Montevideo"], ["Asunción", "PY", -25.26, -57.58, "America/Asuncion"], ["São Paulo", "BR", -23.55, -46.63, "America/Sao_Paulo"], ["Rio de Janeiro", "BR", -22.91, -43.17, "America/Sao_Paulo"], ["Brasília", "BR", -15.79, -47.88, "America/Sao_Paulo"], ["Salvador", "BR", -12.97, -38.51, "America/Bahia"], ["Fortaleza", "BR", -3.73, -38.52, "America/Fortaleza"], ["Belo Horizonte", "BR", -19.92, -43.94, "America/Sao_Paulo"], ["Manaus", "BR", -3.12, -60.02, "America/Manaus"], ["Curitiba", "BR", -25.43, -49.27, "America/Sao_Paulo"], ["Recife", "BR", -8.05, -34.88, "America/Recife"], ["Porto Alegre", "BR", -30.03, -51.23, "America/Sao_Paulo"], ["Belém", "BR", -1.46, -48.5, "America/Belem"], ["Florianópolis", "BR", -27.6, -48.55, "America/Sao_Paulo"], ["Tokyo", "JP", 35.68, 139.69, "Asia/Tokyo"], ["Yokohama", "JP", 35.44, 139.64, "Asia/Tokyo"], ["Osaka", "JP", 34.69, 135.5, "Asia/Tokyo"], ["Nagoya", "JP", 35.18, 136.91, "Asia/Tokyo"], ["Sapporo", "JP", 43.06, 141.35, "Asia/Tokyo"], ["Fukuoka", "JP", 33.59, 130.4, "Asia/Tokyo"], ["Kyoto", "JP", 35.01, 135.77, "Asia/Tokyo"], ["Hiroshima", "JP", 34.39, 132.46, "Asia/Tokyo"], ["Sendai", "JP", 38.27, 140.87, "Asia/Tokyo"], ["Naha", "JP", 26.21, 127.68, "Asia/Tokyo"], ["Seoul", "KR", 37.57, 126.98, "Asia/Seoul"], ["Busan", "KR", 35.18, 129.08, "Asia/Seoul"], ["Incheon", "KR", 37.46, 126.71, "Asia/Seoul"], ["Daegu", "KR", 35.87, 128.6, "Asia/Seoul"], ["Beijing", "CN", 39.9, 116.41, "Asia/Shanghai"], ["Shanghai", "CN", 31.23, 121.47, "Asia/Shanghai"], ["Guangzhou", "CN", 23.13, 113.26, "Asia/Shanghai"], ["Shenzhen", "CN", 22.54, 114.06, "Asia/Shanghai"], ["Chengdu", "CN", 30.57, 104.07, "Asia/Shanghai"], ["Chongqing", "CN", 29.56, 106.55, "Asia/Shanghai"], ["Wuhan", "CN", 30.59, 114.31, "Asia/Shanghai"], ["Xi'an", "CN", 34.34, 108.94, "Asia/Shanghai"], ["Harbin", "CN", 45.8, 126.53, "Asia/Shanghai"], ["Urumqi", "CN", 43.83, 87.62, "Asia/Urumqi"], ["Lhasa", "CN", 29.65, 91.13, "Asia/Shanghai"], ["Hong Kong", "HK", 22.32, 114.17, "Asia/Hong_Kong"], ["Taipei", "TW", 25.03, 121.57, "Asia/Taipei"], ["Kaohsiung", "TW", 22.63, 120.3, "Asia/Taipei"], ["Ulaanbaatar", "MN", 47.92, 106.92, "Asia/Ulaanbaatar"], ["Hanoi", "VN", 21.03, 105.85, "Asia/Bangkok"], ["Ho Chi Minh City", "VN", 10.82, 106.63, "Asia/Bangkok"], ["Bangkok", "TH", 13.76, 100.5, "Asia/Bangkok"], ["Chiang Mai", "TH", 18.79, 98.98, "Asia/Bangkok"], ["Phnom Penh", "KH", 11.56, 104.92, "Asia/Phnom_Penh"], ["Vientiane", "LA", 17.97, 102.63, "Asia/Vientiane"], ["Kuala Lumpur", "MY", 3.14, 101.69, "Asia/Kuala_Lumpur"], ["George Town", "MY", 5.41, 100.33, "Asia/Kuala_Lumpur"], ["Singapore", "SG", 1.35, 103.82, "Asia/Singapore"], ["Jakarta", "ID", -6.21, 106.85, "Asia/Jakarta"], ["Surabaya", "ID", -7.25, 112.75, "Asia/Jakarta"], ["Bandung", "ID", -6.91, 107.61, "Asia/Jakarta"], ["Medan", "ID", 3.59, 98.67, "Asia/Jakarta"], ["Denpasar", "ID", -8.67, 115.22, "Asia/Makassar"], ["Manila", "PH", 14.6, 120.98, "Asia/Manila"], ["Cebu City", "PH", 10.32, 123.89, "Asia/Manila"], ["Davao City", "PH", 7.07, 125.61, "Asia/Manila"], ["Yangon", "MM", 16.87, 96.2, "Asia/Yangon"], ["Mandalay", "MM", 21.97, 96.08, "Asia/Yangon"], ["Mumbai", "IN", 19.08, 72.88, "Asia/Kolkata"], ["Delhi", "IN", 28.61, 77.21, "Asia/Kolkata"], ["Bengaluru", "IN", 12.97, 77.59, "Asia/Kolkata"], ["Hyderabad", "IN", 17.39, 78.49, "Asia/Kolkata"], ["Ahmedabad", "IN", 23.02, 72.57, "Asia/Kolkata"], ["Chennai", "IN", 13.08, 80.27, "Asia/Kolkata"], ["Kolkata", "IN", 22.57, 88.36, "Asia/Kolkata"], ["Pune", "IN", 18.52, 73.86, "Asia/Kolkata"], ["Jaipur", "IN", 26.91, 75.79, "Asia/Kolkata"], ["Varanasi", "IN", 25.32, 82.97, "Asia/Kolkata"], ["Srinagar", "IN", 34.08, 74.8, "Asia/Kolkata"], ["Karachi", "PK", 24.86, 67.0, "Asia/Karachi"], ["Lahore", "PK", 31.52, 74.36, "Asia/Karachi"], ["Islamabad", "PK", 33.68, 73.05, "Asia/Karachi"], ["Dhaka", "BD", 23.81, 90.41, "Asia/Dhaka"], ["Chittagong", "BD", 22.36, 91.8, "Asia/Dhaka"], ["Colombo", "LK", 6.93, 79.86, "Asia/Colombo"], ["Kathmandu", "NP", 27.72, 85.32, "Asia/Kathmandu"], ["Almaty", "KZ", 43.22, 76.85, "Asia/Almaty"], ["Astana", "KZ", 51.17, 71.45, "Asia/Almaty"], ["Tashkent", "UZ", 41.3, 69.24, "Asia/Tashkent"], ["Sydney", "AU", -33.87, 151.21, "Australia/Sydney"], ["Melbourne", "AU", -37.81, 144.96, "Australia/Melbourne"], ["Brisbane", "AU", -27.47, 153.03, "Australia/Brisbane"], ["Perth", "AU", -31.95, 115.86, "Australia/Perth"], ["Adelaide", "AU", -34.93, 138.6, "Australia/Adelaide"], ["Hobart", "AU", -42.88, 147.33, "Australia/Hobart"], ["Canberra", "AU", -35.28, 149.13, "Australia/Sydney"], ["Darwin", "AU", -12.46, 130.84, "Australia/Darwin"], ["Alice Springs", "AU", -23.7, 133.88, "Australia/Darwin"], ["Cairns", "AU", -16.92, 145.77, "Australia/Brisbane"], ["Auckland", "NZ", -36.85, 174.76, "Pacific/Auckland"], ["Wellington", "NZ", -41.29, 174.78, "Pacific/Auckland"], ["Christchurch", "NZ", -43.53, 172.64, "Pacific/Auckland"], ["Dunedin", "NZ", -45.87, 170.5, "Pacific/Auckland"], ["Queenstown", "NZ", -45.03, 168.66, "Pacific/Auckland"], ["Suva", "FJ", -18.14, 178.44, "Pacific/Fiji"], ["Port Moresby", "PG", -9.44, 147.18, "Pacific/Port_Moresby"], ["Nouméa", "NC", -22.28, 166.46, "Pacific/Noumea"], ["Papeete", "PF", -17.54, -149.57, "Pacific/Tahiti"], ["Istanbul", "TR", 41.01, 28.98, "Europe/Istanbul"], ["Ankara", "TR", 39.93, 32.85, "Europe/Istanbul"], ["Izmir", "TR", 38.42, 27.14, "Europe/Istanbul"], ["Antalya", "TR", 36.89, 30.71, "Europe/Istanbul"], ["Bursa", "TR", 40.18, 29.06, "Europe/Istanbul"], ["Trabzon", "TR", 41.0, 39.72, "Europe/Istanbul"], ["Tel Aviv", "IL", 32.09, 34.78, "Asia/Jerusalem"], ["Jerusalem", "IL", 31.77, 35.22, "Asia/Jerusalem"], ["Haifa", "IL", 32.79, 34.99, "Asia/Jerusalem"], ["Amman", "JO", 31.95, 35.93, "Asia/Amman"], ["Beirut", "LB", 33.89, 35.5, "Asia/Beirut"], ["Damascus", "SY", 33.51, 36.29, "Asia/Damascus"], ["Baghdad", "IQ", 33.32, 44.36, "Asia/Baghdad"], ["Erbil", "IQ", 36.19, 44.01, "Asia/Baghdad"], ["Basra", "IQ", 30.51, 47.81, "Asia/Baghdad"], ["Tehran", "IR", 35.69, 51.39, "Asia/Tehran"], ["Isfahan", "IR", 32.65, 51.67, "Asia/Tehran"], ["Shiraz", "IR", 29.59, 52.58, "Asia/Tehran"], ["Riyadh", "SA", 24.71, 46.68, "Asia/Riyadh"], ["Jeddah", "SA", 21.54, 39.17, "Asia/Riyadh"], ["Mecca", "SA", 21.39, 39.86, "Asia/Riyadh"], ["Medina", "SA", 24.52, 39.57, "Asia/Riyadh"], ["Dubai", "AE", 25.2, 55.27, "Asia/Dubai"], ["Abu Dhabi", "AE", 24.45, 54.38, "Asia/Dubai"], ["Doha", "QA", 25.29, 51.53, "Asia/Qatar"], ["Kuwait City", "KW", 29.38, 47.98, "Asia/Kuwait"], ["Manama", "BH", 26.23, 50.59, "Asia/Bahrain"], ["Muscat", "OM", 23.59, 58.41, "Asia/Muscat"], ["Cairo", "EG", 30.04, 31.24, "Africa/Cairo"], ["Alexandria", "EG", 31.2, 29.92, "Africa/Cairo"], ["Giza", "EG", 30.01, 31.21, "Africa/Cairo"], ["Luxor", "EG", 25.7, 32.64, "Africa/Cairo"], ["Aswan", "EG", 24.09, 32.9, "Africa/Cairo"], ["Casablanca", "MA", 33.57, -7.59, "Africa/Casablanca"], ["Rabat", "MA", 34.02, -6.84, "Africa/Casablanca"], ["Marrakech", "MA", 31.63, -8.01, "Africa/Casablanca"], ["Fes", "MA", 34.02, -5.0, "Africa/Casablanca"], ["Tangier", "MA", 35.76, -5.8, "Africa/Casablanca"], ["Algiers", "DZ", 36.75, 3.06, "Africa/Algiers"], ["Oran", "DZ", 35.7, -0.64, "Africa/Algiers"], ["Tunis", "TN", 36.8, 10.18, "Africa/Tunis"], ["Tripoli", "LY", 32.89, 13.19, "Africa/Tripoli"], ["Khartoum", "SD", 15.5, 32.56, "Africa/Khartoum"], ["Addis Ababa", "ET", 9.03, 38.74, "Africa/Addis_Ababa"], ["Nairobi", "KE", -1.29, 36.82, "Africa/Nairobi"], ["Mombasa", "KE", -4.04, 39.67, "Africa/Nairobi"], ["Kampala", "UG", 0.35, 32.58, "Africa/Kampala"], ["Dar es Salaam", "TZ", -6.79, 39.28, "Africa/Dar_es_Salaam"], ["Zanzibar City", "TZ", -6.16, 39.2, "Africa/Dar_es_Salaam"], ["Kigali", "RW", -1.94, 30.06, "Africa/Kigali"], ["Lagos", "NG", 6.52, 3.38, "Africa/Lagos"], ["Abuja", "NG", 9.06, 7.5, "Africa/Lagos"], ["Kano", "NG", 12.0, 8.52, "Africa/Lagos"], ["Ibadan", "NG", 7.38, 3.95, "Africa/Lagos"], ["Accra", "GH", 5.6, -0.19, "Africa/Accra"], ["Kumasi", "GH", 6.69, -1.62, "Africa/Accra"], ["Dakar", "SN", 14.69, -17.44, "Africa/Dakar"], ["Abidjan", "CI", 5.36, -4.01, "Africa/Abidjan"], ["Johannesburg", "ZA", -26.2, 28.05, "Africa/Johannesburg"], ["Cape Town", "ZA", -33.92, 18.42, "Africa/Johannesburg"], ["Durban", "ZA", -29.86, 31.02, "Africa/Johannesburg"], ["Pretoria", "ZA", -25.75, 28.19, "Africa/Johannesburg"], ["Port Elizabeth (Gqeberha)", "ZA", -33.96, 25.6, "Africa/Johannesburg"], ["Windhoek", "NA", -22.56, 17.08, "Africa/Windhoek"], ["Gaborone", "BW", -24.66, 25.92, "Africa/Gaborone"], ["Harare", "ZW", -17.83, 31.05, "Africa/Harare"], ["Lusaka", "ZM", -15.39, 28.32, "Africa/Lusaka"], ["Maputo", "MZ", -25.97, 32.58, "Africa/Maputo"], ["Antananarivo", "MG", -18.87, 47.51, "Indian/Antananarivo"], ["Algeciras", "ES", 36.13, -5.45, "Europe/Madrid"], ["San Fernando", "ES", 36.46, -6.2, "Europe/Madrid"], ["El Puerto de Santa María", "ES", 36.6, -6.23, "Europe/Madrid"], ["Chiclana de la Frontera", "ES", 36.42, -6.15, "Europe/Madrid"], ["Sanlúcar de Barrameda", "ES", 36.78, -6.35, "Europe/Madrid"], ["La Línea de la Concepción", "ES", 36.17, -5.35, "Europe/Madrid"], ["Motril", "ES", 36.75, -3.52, "Europe/Madrid"], ["Linares", "ES", 38.1, -3.63, "Europe/Madrid"], ["Úbeda", "ES", 38.01, -3.37, "Europe/Madrid"], ["Dos Hermanas", "ES", 37.28, -5.92, "Europe/Madrid"], ["Alcalá de Guadaíra", "ES", 37.33, -5.85, "Europe/Madrid"], ["Utrera", "ES", 37.18, -5.81, "Europe/Madrid"], ["Écija", "ES", 37.54, -5.08, "Europe/Madrid"], ["Mérida", "ES", 38.92, -6.34, "Europe/Madrid"], ["Plasencia", "ES", 40.03, -6.09, "Europe/Madrid"], ["Talavera de la Reina", "ES", 39.96, -4.83, "Europe/Madrid"], ["Puertollano", "ES", 38.69, -4.11, "Europe/Madrid"], ["Cuenca", "ES", 40.07, -2.14, "Europe/Madrid"], ["Guadalajara", "ES", 40.63, -3.17, "Europe/Madrid"], ["Segovia", "ES", 40.95, -4.12, "Europe/Madrid"], ["Ávila", "ES", 40.66, -4.7, "Europe/Madrid"], ["Soria", "ES", 41.76, -2.47, "Europe/Madrid"], ["Zamora", "ES", 41.5, -5.75, "Europe/Madrid"], ["Ponferrada", "ES", 42.55, -6.59, "Europe/Madrid"], ["Palencia", "ES", 42.01, -4.53, "Europe/Madrid"], ["Torrelavega", "ES", 43.35, -4.05, "Europe/Madrid"], ["Avilés", "ES", 43.56, -5.92, "Europe/Madrid"], ["Ferrol", "ES", 43.48, -8.24, "Europe/Madrid"], ["Pontevedra", "ES", 42.43, -8.64, "Europe/Madrid"], ["Vilagarcía de Arousa", "ES", 42.6, -8.76, "Europe/Madrid"], ["Barakaldo", "ES", 43.3, -2.99, "Europe/Madrid"], ["Getxo", "ES", 43.36, -3.01, "Europe/Madrid"], ["Portugalete", "ES", 43.32, -3.02, "Europe/Madrid"], ["Irun", "ES", 43.34, -1.79, "Europe/Madrid"], ["Huesca", "ES", 42.14, -0.41, "Europe/Madrid"], ["Teruel", "ES", 40.34, -1.11, "Europe/Madrid"], ["Tortosa", "ES", 40.81, 0.52, "Europe/Madrid"], ["Reus", "ES", 41.16, 1.11, "Europe/Madrid"], ["Tarragona", "ES", 41.12, 1.25, "Europe/Madrid"], ["Lleida", "ES", 41.62, 0.62, "Europe/Madrid"], ["Girona", "ES", 41.98, 2.82, "Europe/Madrid"], ["Figueres", "ES", 42.27, 2.96, "Europe/Madrid"], ["Manresa", "ES", 41.73, 1.83, "Europe/Madrid"], ["Vic", "ES", 41.93, 2.25, "Europe/Madrid"], ["Mataró", "ES", 41.54, 2.44, "Europe/Madrid"], ["Granollers", "ES", 41.61, 2.29, "Europe/Madrid"], ["Rubí", "ES", 41.49, 2.03, "Europe/Madrid"], ["Sant Cugat del Vallès", "ES", 41.47, 2.08, "Europe/Madrid"], ["Cornellà de Llobregat", "ES", 41.36, 2.07, "Europe/Madrid"], ["Gandia", "ES", 38.97, -0.18, "Europe/Madrid"], ["Torrent", "ES", 39.44, -0.47, "Europe/Madrid"], ["Sagunt", "ES", 39.68, -0.28, "Europe/Madrid"], ["Alcoi", "ES", 38.7, -0.47, "Europe/Madrid"], ["Elda", "ES", 38.48, -0.79, "Europe/Madrid"], ["Benidorm", "ES", 38.54, -0.13, "Europe/Madrid"], ["Torrevieja", "ES", 37.98, -0.68, "Europe/Madrid"], ["Orihuela", "ES", 38.08, -0.95, "Europe/Madrid"], ["Lorca", "ES", 37.67, -1.7, "Europe/Madrid"], ["Molina de Segura", "ES", 38.05, -1.21, "Europe/Madrid"], ["Ibiza", "ES", 38.91, 1.43, "Europe/Madrid"], ["Manacor", "ES", 39.57, 3.21, "Europe/Madrid"], ["Arrecife", "ES", 28.96, -13.55, "Atlantic/Canary"], ["Puerto del Rosario", "ES", 28.5, -13.86, "Atlantic/Canary"], ["Telde", "ES", 28.0, -15.42, "Atlantic/Canary"], ["Arona", "ES", 28.1, -16.68, "Atlantic/Canary"], ["Flensburg", "DE", 54.79, 9.44, "Europe/Berlin"], ["Neumünster", "DE", 54.07, 9.99, "Europe/Berlin"], ["Norderstedt", "DE", 53.71, 10.01, "Europe/Berlin"], ["Wilhelmshaven", "DE", 53.52, 8.13, "Europe/Berlin"], ["Delmenhorst", "DE", 53.05, 8.63, "Europe/Berlin"], ["Bremerhaven", "DE", 53.54, 8.58, "Europe/Berlin"], ["Lüneburg", "DE", 53.25, 10.41, "Europe/Berlin"], ["Celle", "DE", 52.62, 10.08, "Europe/Berlin"], ["Hildesheim", "DE", 52.15, 9.95, "Europe/Berlin"], ["Salzgitter", "DE", 52.15, 10.33, "Europe/Berlin"], ["Wolfsburg", "DE", 52.42, 10.79, "Europe/Berlin"], ["Göttingen", "DE", 51.53, 9.93, "Europe/Berlin"], ["Paderborn", "DE", 51.72, 8.75, "Europe/Berlin"], ["Gütersloh", "DE", 51.9, 8.38, "Europe/Berlin"], ["Herford", "DE", 52.12, 8.67, "Europe/Berlin"], ["Minden", "DE", 52.29, 8.92, "Europe/Berlin"], ["Siegen", "DE", 50.87, 8.02, "Europe/Berlin"], ["Iserlohn", "DE", 51.38, 7.7, "Europe/Berlin"], ["Lüdenscheid", "DE", 51.22, 7.63, "Europe/Berlin"], ["Recklinghausen", "DE", 51.61, 7.2, "Europe/Berlin"], ["Bottrop", "DE", 51.52, 6.93, "Europe/Berlin"], ["Marl", "DE", 51.66, 7.12, "Europe/Berlin"], ["Moers", "DE", 51.45, 6.63, "Europe/Berlin"], ["Solingen", "DE", 51.17, 7.08, "Europe/Berlin"], ["Remscheid", "DE", 51.18, 7.19, "Europe/Berlin"], ["Leverkusen", "DE", 51.03, 6.98, "Europe/Berlin"], ["Bergisch Gladbach", "DE", 50.99, 7.13, "Europe/Berlin"], ["Trier", "DE", 49.76, 6.64, "Europe/Berlin"], ["Koblenz", "DE", 50.36, 7.6, "Europe/Berlin"], ["Kaiserslautern", "DE", 49.44, 7.77, "Europe/Berlin"], ["Worms", "DE", 49.63, 8.36, "Europe/Berlin"], ["Ludwigshafen", "DE", 49.48, 8.45, "Europe/Berlin"], ["Heidelberg", "DE", 49.41, 8.69, "Europe/Berlin"], ["Darmstadt", "DE", 49.87, 8.65, "Europe/Berlin"], ["Offenbach am Main", "DE", 50.1, 8.77, "Europe/Berlin"], ["Hanau", "DE", 50.13, 8.92, "Europe/Berlin"], ["Aschaffenburg", "DE", 49.97, 9.15, "Europe/Berlin"], ["Marburg", "DE", 50.81, 8.77, "Europe/Berlin"], ["Gießen", "DE", 50.59, 8.67, "Europe/Berlin"], ["Fulda", "DE", 50.55, 9.68, "Europe/Berlin"], ["Würzburg", "DE", 49.79, 9.95, "Europe/Berlin"], ["Bamberg", "DE", 49.89, 10.89, "Europe/Berlin"], ["Bayreuth", "DE", 49.95, 11.58, "Europe/Berlin"], ["Erlangen", "DE", 49.6, 11.0, "Europe/Berlin"], ["Fürth", "DE", 49.48, 10.99, "Europe/Berlin"], ["Ingolstadt", "DE", 48.77, 11.43, "Europe/Berlin"], ["Regensburg", "DE", 49.02, 12.1, "Europe/Berlin"], ["Passau", "DE", 48.57, 13.46, "Europe/Berlin"], ["Landshut", "DE", 48.54, 12.15, "Europe/Berlin"], ["Rosenheim", "DE", 47.86, 12.13, "Europe/Berlin"], ["Kempten", "DE", 47.73, 10.32, "Europe/Berlin"], ["Konstanz", "DE", 47.66, 9.18, "Europe/Berlin"], ["Pforzheim", "DE", 48.89, 8.7, "Europe/Berlin"], ["Reutlingen", "DE", 48.49, 9.21, "Europe/Berlin"], ["Tübingen", "DE", 48.52, 9.06, "Europe/Berlin"], ["Heilbronn", "DE", 49.14, 9.22, "Europe/Berlin"], ["Ulm", "DE", 48.4, 10.0, "Europe/Berlin"], ["Kautokeino", "NO", 69.01, 23.04, "Europe/Oslo"], ["Karasjok", "NO", 69.47, 25.51, "Europe/Oslo"], ["Vardø", "NO", 70.37, 31.11, "Europe/Oslo"], ["Honningsvåg", "NO", 70.98, 25.97, "Europe/Oslo"], ["Svolvær", "NO", 68.23, 14.57, "Europe/Oslo"], ["Leknes", "NO", 68.15, 13.61, "Europe/Oslo"], ["Sortland", "NO", 68.7, 15.41, "Europe/Oslo"], ["Finnsnes", "NO", 69.23, 17.98, "Europe/Oslo"], ["Fauske", "NO", 67.26, 15.39, "Europe/Oslo"], ["Rørvik", "NO", 64.86, 11.24, "Europe/Oslo"], ["Orkanger", "NO", 63.3, 9.85, "Europe/Oslo"], ["Voss", "NO", 60.63, 6.42, "Europe/Oslo"], ["Odda", "NO", 60.07, 6.55, "Europe/Oslo"], ["Sogndal", "NO", 61.23, 7.1, "Europe/Oslo"], ["Rjukan", "NO", 59.88, 8.6, "Europe/Oslo"], ["Gol", "NO", 60.7, 8.95, "Europe/Oslo"], ["Geilo", "NO", 60.53, 8.21, "Europe/Oslo"], ["Haparanda", "SE", 65.83, 24.13, "Europe/Stockholm"], ["Kalix", "SE", 65.85, 23.14, "Europe/Stockholm"], ["Pajala", "SE", 67.21, 23.37, "Europe/Stockholm"], ["Jokkmokk", "SE", 66.61, 19.83, "Europe/Stockholm"], ["Arvidsjaur", "SE", 65.59, 19.18, "Europe/Stockholm"], ["Lycksele", "SE", 64.6, 18.67, "Europe/Stockholm"], ["Vilhelmina", "SE", 64.63, 16.66, "Europe/Stockholm"], ["Strömsund", "SE", 63.85, 15.56, "Europe/Stockholm"], ["Sollefteå", "SE", 63.17, 17.27, "Europe/Stockholm"], ["Åre", "SE", 63.4, 13.08, "Europe/Stockholm"], ["Sveg", "SE", 62.03, 14.36, "Europe/Stockholm"], ["Ljusdal", "SE", 61.83, 16.09, "Europe/Stockholm"], ["Malung", "SE", 60.68, 13.72, "Europe/Stockholm"], ["Sälen", "SE", 61.16, 13.26, "Europe/Stockholm"], ["Sunne", "SE", 59.84, 13.14, "Europe/Stockholm"], ["Filipstad", "SE", 59.71, 14.17, "Europe/Stockholm"], ["Nora", "SE", 59.52, 15.04, "Europe/Stockholm"], ["Lindesberg", "SE", 59.59, 15.23, "Europe/Stockholm"], ["Sala", "SE", 59.92, 16.61, "Europe/Stockholm"], ["Avesta", "SE", 60.15, 16.17, "Europe/Stockholm"], ["Hedemora", "SE", 60.28, 15.99, "Europe/Stockholm"], ["Leksand", "SE", 60.73, 15.0, "Europe/Stockholm"], ["Rättvik", "SE", 60.89, 15.12, "Europe/Stockholm"], ["Mariehamn", "AX", 60.1, 19.94, "Europe/Mariehamn"], ["Salt Lake City", "US", 40.76, -111.89, "America/Denver"], ["Boise", "US", 43.62, -116.2, "America/Boise"], ["Spokane", "US", 47.66, -117.43, "America/Los_Angeles"], ["Tacoma", "US", 47.25, -122.44, "America/Los_Angeles"], ["Eugene", "US", 44.05, -123.09, "America/Los_Angeles"], ["Salem", "US", 44.94, -123.04, "America/Los_Angeles"], ["Reno", "US", 39.53, -119.81, "America/Los_Angeles"], ["Billings", "US", 45.78, -108.5, "America/Denver"], ["Helena", "US", 46.59, -112.04, "America/Denver"], ["Cheyenne", "US", 41.14, -104.82, "America/Denver"], ["Casper", "US", 42.87, -106.31, "America/Denver"], ["Fargo", "US", 46.88, -96.79, "America/Chicago"], ["Bismarck", "US", 46.81, -100.78, "America/Chicago"], ["Sioux Falls", "US", 43.54, -96.73, "America/Chicago"], ["Des Moines", "US", 41.59, -93.6, "America/Chicago"], ["Cedar Rapids", "US", 41.98, -91.67, "America/Chicago"], ["Wichita", "US", 37.69, -97.34, "America/Chicago"], ["Tulsa", "US", 36.15, -95.99, "America/Chicago"], ["Oklahoma City", "US", 35.47, -97.52, "America/Chicago"], ["Little Rock", "US", 34.75, -92.29, "America/Chicago"], ["Shreveport", "US", 32.53, -93.75, "America/Chicago"], ["Baton Rouge", "US", 30.45, -91.19, "America/Chicago"], ["Jackson", "US", 32.3, -90.18, "America/Chicago"], ["Mobile", "US", 30.69, -88.04, "America/Chicago"], ["Birmingham", "US", 33.52, -86.81, "America/Chicago"], ["Montgomery", "US", 32.38, -86.3, "America/Chicago"], ["Huntsville", "US", 34.73, -86.59, "America/Chicago"], ["Knoxville", "US", 35.96, -83.92, "America/New_York"], ["Chattanooga", "US", 35.05, -85.31, "America/New_York"], ["Savannah", "US", 32.08, -81.09, "America/New_York"], ["Augusta", "US", 33.47, -81.97, "America/New_York"], ["Charleston", "US", 32.78, -79.93, "America/New_York"], ["Columbia", "US", 34.0, -81.03, "America/New_York"], ["Greenville", "US", 34.85, -82.4, "America/New_York"], ["Charlotte", "US", 35.23, -80.84, "America/New_York"], ["Greensboro", "US", 36.07, -79.79, "America/New_York"], ["Durham", "US", 35.99, -78.9, "America/New_York"], ["Winston-Salem", "US", 36.1, -80.24, "America/New_York"], ["Richmond", "US", 37.54, -77.44, "America/New_York"], ["Norfolk", "US", 36.85, -76.29, "America/New_York"], ["Virginia Beach", "US", 36.85, -75.98, "America/New_York"], ["Pittsburgh", "US", 40.44, -79.99, "America/New_York"], ["Buffalo", "US", 42.89, -78.88, "America/New_York"], ["Rochester", "US", 43.16, -77.61, "America/New_York"], ["Syracuse", "US", 43.05, -76.15, "America/New_York"], ["Albany", "US", 42.65, -73.76, "America/New_York"], ["Hartford", "US", 41.76, -72.69, "America/New_York"], ["New Haven", "US", 41.31, -72.92, "America/New_York"], ["Providence", "US", 41.82, -71.41, "America/New_York"], ["Worcester", "US", 42.26, -71.8, "America/New_York"], ["Manchester", "US", 42.99, -71.45, "America/New_York"], ["Burlington", "US", 44.48, -73.21, "America/New_York"], ["Portland", "US", 43.66, -70.26, "America/New_York"], ["Bangor", "US", 44.8, -68.78, "America/New_York"], ["London", "CA", 42.98, -81.25, "America/Toronto"], ["Kitchener", "CA", 43.45, -80.48, "America/Toronto"], ["Windsor", "CA", 42.31, -83.04, "America/Toronto"], ["Hamilton", "CA", 43.26, -79.87, "America/Toronto"], ["Oshawa", "CA", 43.9, -78.85, "America/Toronto"], ["Barrie", "CA", 44.39, -79.69, "America/Toronto"], ["Kingston", "CA", 44.23, -76.49, "America/Toronto"], ["Sudbury", "CA", 46.49, -81.0, "America/Toronto"], ["Thunder Bay", "CA", 48.38, -89.25, "America/Toronto"], ["Sherbrooke", "CA", 45.4, -71.9, "America/Toronto"], ["Trois-Rivières", "CA", 46.34, -72.55, "America/Toronto"], ["Kelowna", "CA", 49.89, -119.5, "America/Vancouver"], ["Kamloops", "CA", 50.67, -120.33, "America/Vancouver"], ["Prince George", "CA", 53.92, -122.75, "America/Vancouver"], ["Moncton", "CA", 46.09, -64.78, "America/Moncton"], ["Saint John", "CA", 45.27, -66.06, "America/Moncton"], ["Fredericton", "CA", 45.96, -66.64, "America/Moncton"], ["Charlottetown", "CA", 46.24, -63.13, "America/Halifax"], ["Sydney", "CA", 46.14, -60.19, "America/Halifax"], ["Gold Coast", "AU", -28.02, 153.4, "Australia/Brisbane"], ["Sunshine Coast", "AU", -26.65, 153.07, "Australia/Brisbane"], ["Newcastle", "AU", -32.93, 151.78, "Australia/Sydney"], ["Central Coast", "AU", -33.33, 151.4, "Australia/Sydney"], ["Wollongong", "AU", -34.42, 150.89, "Australia/Sydney"], ["Geelong", "AU", -38.15, 144.36, "Australia/Melbourne"], ["Townsville", "AU", -19.26, 146.82, "Australia/Brisbane"], ["Toowoomba", "AU", -27.56, 151.95, "Australia/Brisbane"], ["Ballarat", "AU", -37.56, 143.85, "Australia/Melbourne"], ["Bendigo", "AU", -36.76, 144.28, "Australia/Melbourne"], ["Albury", "AU", -36.08, 146.92, "Australia/Sydney"], ["Launceston", "AU", -41.43, 147.14, "Australia/Hobart"], ["Mackay", "AU", -21.14, 149.19, "Australia/Brisbane"], ["Rockhampton", "AU", -23.38, 150.51, "Australia/Brisbane"], ["Bunbury", "AU", -33.33, 115.64, "Australia/Perth"], ["Coffs Harbour", "AU", -30.3, 153.11, "Australia/Sydney"], ["Wagga Wagga", "AU", -35.12, 147.37, "Australia/Sydney"], ["Mildura", "AU", -34.19, 142.16, "Australia/Melbourne"], ["Shepparton", "AU", -36.38, 145.4, "Australia/Melbourne"], ["Port Macquarie", "AU", -31.43, 152.91, "Australia/Sydney"], ["Orange", "AU", -33.28, 149.1, "Australia/Sydney"], ["Dubbo", "AU", -32.26, 148.6, "Australia/Sydney"], ["Tamworth", "AU", -31.09, 150.93, "Australia/Sydney"], ["Bathurst", "AU", -33.42, 149.58, "Australia/Sydney"], ["Nowra", "AU", -34.88, 150.6, "Australia/Sydney"], ["Geraldton", "AU", -28.78, 114.61, "Australia/Perth"], ["Kalgoorlie", "AU", -30.75, 121.47, "Australia/Perth"], ["Hamilton", "NZ", -37.79, 175.28, "Pacific/Auckland"], ["Tauranga", "NZ", -37.69, 176.17, "Pacific/Auckland"], ["Lower Hutt", "NZ", -41.21, 174.91, "Pacific/Auckland"], ["Palmerston North", "NZ", -40.36, 175.61, "Pacific/Auckland"], ["Napier", "NZ", -39.49, 176.92, "Pacific/Auckland"], ["Porirua", "NZ", -41.13, 174.84, "Pacific/Auckland"], ["New Plymouth", "NZ", -39.06, 174.07, "Pacific/Auckland"], ["Rotorua", "NZ", -38.14, 176.25, "Pacific/Auckland"], ["Whangarei", "NZ", -35.73, 174.32, "Pacific/Auckland"], ["Hibiscus Coast", "NZ", -36.59, 174.7, "Pacific/Auckland"], ["Nelson", "NZ", -41.27, 173.28, "Pacific/Auckland"], ["Invercargill", "NZ", -46.41, 168.35, "Pacific/Auckland"], ["Hastings", "NZ", -39.64, 176.84, "Pacific/Auckland"], ["Upper Hutt", "NZ", -41.12, 175.07, "Pacific/Auckland"], ["Whanganui", "NZ", -39.93, 175.05, "Pacific/Auckland"], ["Gisborne", "NZ", -38.66, 178.02, "Pacific/Auckland"], ["Apia", "WS", -13.83, -171.77, "Pacific/Apia"], ["Nuku'alofa", "TO", -21.14, -175.2, "Pacific/Tongatapu"], ["Honiara", "SB", -9.43, 159.95, "Pacific/Guadalcanal"], ["Port Vila", "VU", -17.73, 168.32, "Pacific/Efate"], ["Tarawa", "KI", 1.33, 172.98, "Pacific/Tarawa"], ["Majuro", "MH", 7.09, 171.38, "Pacific/Majuro"], ["Palikir", "FM", 6.92, 158.16, "Pacific/Pohnpei"], ["Agana (Hagåtña)", "GU", 13.48, 144.75, "Pacific/Guam"], ["Saipan", "MP", 15.18, 145.75, "Pacific/Saipan"], ["Koror", "PW", 7.34, 134.48, "Pacific/Palau"], ["Southampton", "GB", 50.9, -1.4, "Europe/London"], ["Portsmouth", "GB", 50.82, -1.09, "Europe/London"], ["Brighton", "GB", 50.83, -0.14, "Europe/London"], ["Plymouth", "GB", 50.38, -4.14, "Europe/London"], ["Exeter", "GB", 50.72, -3.53, "Europe/London"], ["Bournemouth", "GB", 50.72, -1.88, "Europe/London"], ["Reading", "GB", 51.45, -0.97, "Europe/London"], ["Oxford", "GB", 51.75, -1.26, "Europe/London"], ["Cambridge", "GB", 52.21, 0.12, "Europe/London"], ["Norwich", "GB", 52.63, 1.3, "Europe/London"], ["Ipswich", "GB", 52.06, 1.16, "Europe/London"], ["Luton", "GB", 51.88, -0.42, "Europe/London"], ["Milton Keynes", "GB", 52.04, -0.76, "Europe/London"], ["Northampton", "GB", 52.24, -0.9, "Europe/London"], ["Peterborough", "GB", 52.57, -0.24, "Europe/London"], ["Leicester", "GB", 52.64, -1.13, "Europe/London"], ["Nottingham", "GB", 52.95, -1.15, "Europe/London"], ["Derby", "GB", 52.92, -1.48, "Europe/London"], ["Stoke-on-Trent", "GB", 53.0, -2.18, "Europe/London"], ["Wolverhampton", "GB", 52.59, -2.13, "Europe/London"], ["Coventry", "GB", 52.41, -1.51, "Europe/London"], ["Swansea", "GB", 51.62, -3.94, "Europe/London"], ["Newport", "GB", 51.59, -3.0, "Europe/London"], ["Wrexham", "GB", 53.05, -2.99, "Europe/London"], ["Preston", "GB", 53.76, -2.7, "Europe/London"], ["Blackpool", "GB", 53.82, -3.05, "Europe/London"], ["Lancaster", "GB", 54.05, -2.8, "Europe/London"], ["Carlisle", "GB", 54.89, -2.93, "Europe/London"], ["York", "GB", 53.96, -1.08, "Europe/London"], ["Hull", "GB", 53.74, -0.34, "Europe/London"], ["Middlesbrough", "GB", 54.58, -1.23, "Europe/London"], ["Sunderland", "GB", 54.91, -1.38, "Europe/London"], ["Durham", "GB", 54.78, -1.58, "Europe/London"], ["Stirling", "GB", 56.12, -3.94, "Europe/London"], ["Perth", "GB", 56.4, -3.43, "Europe/London"], ["Dunfermline", "GB", 56.07, -3.46, "Europe/London"], ["Ayr", "GB", 55.46, -4.63, "Europe/London"], ["Kilmarnock", "GB", 55.61, -4.5, "Europe/London"], ["Paisley", "GB", 55.85, -4.42, "Europe/London"], ["Londonderry (Derry)", "GB", 54.99, -7.31, "Europe/London"], ["Lisburn", "GB", 54.51, -6.04, "Europe/London"], ["Bangor", "GB", 54.66, -5.67, "Europe/London"], ["Waterford", "IE", 52.26, -7.11, "Europe/Dublin"], ["Drogheda", "IE", 53.72, -6.35, "Europe/Dublin"], ["Dundalk", "IE", 54.0, -6.42, "Europe/Dublin"], ["Sligo", "IE", 54.27, -8.48, "Europe/Dublin"], ["Kilkenny", "IE", 52.65, -7.25, "Europe/Dublin"], ["Wexford", "IE", 52.33, -6.46, "Europe/Dublin"], ["Athlone", "IE", 53.42, -7.94, "Europe/Dublin"], ["Tralee", "IE", 52.27, -9.7, "Europe/Dublin"], ["Killarney", "IE", 52.06, -9.51, "Europe/Dublin"], ["Amiens", "FR", 49.89, 2.3, "Europe/Paris"], ["Angers", "FR", 47.47, -0.55, "Europe/Paris"], ["Annecy", "FR", 45.9, 6.13, "Europe/Paris"], ["Avignon", "FR", 43.95, 4.81, "Europe/Paris"], ["Besançon", "FR", 47.24, 6.02, "Europe/Paris"], ["Bourges", "FR", 47.08, 2.4, "Europe/Paris"], ["Caen", "FR", 49.18, -0.37, "Europe/Paris"], ["Calais", "FR", 50.95, 1.86, "Europe/Paris"], ["Cannes", "FR", 43.55, 7.02, "Europe/Paris"], ["Chambéry", "FR", 45.57, 5.92, "Europe/Paris"], ["Clermont-Ferrand", "FR", 45.78, 3.08, "Europe/Paris"], ["Colmar", "FR", 48.08, 7.36, "Europe/Paris"], ["Dijon", "FR", 47.32, 5.04, "Europe/Paris"], ["Dunkerque", "FR", 51.03, 2.38, "Europe/Paris"], ["La Rochelle", "FR", 46.16, -1.15, "Europe/Paris"], ["Le Mans", "FR", 48.0, 0.2, "Europe/Paris"], ["Limoges", "FR", 45.83, 1.26, "Europe/Paris"], ["Lorient", "FR", 47.75, -3.37, "Europe/Paris"], ["Metz", "FR", 49.12, 6.18, "Europe/Paris"], ["Mulhouse", "FR", 47.75, 7.34, "Europe/Paris"], ["Nancy", "FR", 48.69, 6.18, "Europe/Paris"], ["Nîmes", "FR", 43.84, 4.36, "Europe/Paris"], ["Orléans", "FR", 47.9, 1.91, "Europe/Paris"], ["Pau", "FR", 43.3, -0.37, "Europe/Paris"], ["Perpignan", "FR", 42.7, 2.9, "Europe/Paris"], ["Poitiers", "FR", 46.58, 0.34, "Europe/Paris"], ["Rouen", "FR", 49.44, 1.1, "Europe/Paris"], ["Saint-Nazaire", "FR", 47.27, -2.21, "Europe/Paris"], ["Tours", "FR", 47.39, 0.69, "Europe/Paris"], ["Troyes", "FR", 48.3, 4.07, "Europe/Paris"], ["Valence", "FR", 44.93, 4.89, "Europe/Paris"], ["Ancona", "IT", 43.62, 13.52, "Europe/Rome"], ["Arezzo", "IT", 43.46, 11.88, "Europe/Rome"], ["Bergamo", "IT", 45.7, 9.67, "Europe/Rome"], ["Bolzano", "IT", 46.5, 11.35, "Europe/Rome"], ["Brescia", "IT", 45.54, 10.22, "Europe/Rome"], ["Cagliari", "IT", 39.22, 9.12, "Europe/Rome"], ["Ferrara", "IT", 44.84, 11.62, "Europe/Rome"], ["Foggia", "IT", 41.46, 15.54, "Europe/Rome"], ["Forlì", "IT", 44.22, 12.04, "Europe/Rome"], ["L'Aquila", "IT", 42.35, 13.4, "Europe/Rome"], ["La Spezia", "IT", 44.11, 9.82, "Europe/Rome"], ["Lecce", "IT", 40.35, 18.17, "Europe/Rome"], ["Livorno", "IT", 43.55, 10.31, "Europe/Rome"], ["Lucca", "IT", 43.84, 10.5, "Europe/Rome"], ["Messina", "IT", 38.19, 15.55, "Europe/Rome"], ["Modena", "IT", 44.65, 10.93, "Europe/Rome"], ["Monza", "IT", 45.58, 9.27, "Europe/Rome"], ["Novara", "IT", 45.45, 8.62, "Europe/Rome"], ["Padova", "IT", 45.41, 11.88, "Europe/Rome"], ["Parma", "IT", 44.8, 10.33, "Europe/Rome"], ["Pavia", "IT", 45.19, 9.16, "Europe/Rome"], ["Perugia", "IT", 43.11, 12.39, "Europe/Rome"], ["Pesaro", "IT", 43.91, 12.91, "Europe/Rome"], ["Pescara", "IT", 42.46, 14.21, "Europe/Rome"], ["Piacenza", "IT", 45.05, 9.69, "Europe/Rome"], ["Pisa", "IT", 43.72, 10.4, "Europe/Rome"], ["Pistoia", "IT", 43.93, 10.92, "Europe/Rome"], ["Potenza", "IT", 40.64, 15.81, "Europe/Rome"], ["Ravenna", "IT", 44.42, 12.2, "Europe/Rome"], ["Reggio Calabria", "IT", 38.11, 15.65, "Europe/Rome"], ["Reggio Emilia", "IT", 44.7, 10.63, "Europe/Rome"], ["Rimini", "IT", 44.06, 12.57, "Europe/Rome"], ["Salerno", "IT", 40.68, 14.76, "Europe/Rome"], ["Sassari", "IT", 40.73, 8.56, "Europe/Rome"], ["Siracusa", "IT", 37.08, 15.29, "Europe/Rome"], ["Taranto", "IT", 40.48, 17.23, "Europe/Rome"], ["Terni", "IT", 42.56, 12.65, "Europe/Rome"], ["Trento", "IT", 46.07, 11.12, "Europe/Rome"], ["Treviso", "IT", 45.67, 12.24, "Europe/Rome"], ["Udine", "IT", 46.06, 13.24, "Europe/Rome"], ["Vicenza", "IT", 45.55, 11.55, "Europe/Rome"], ["Białystok", "PL", 53.13, 23.16, "Europe/Warsaw"], ["Bielsko-Biała", "PL", 49.82, 19.05, "Europe/Warsaw"], ["Bydgoszcz", "PL", 53.12, 18.01, "Europe/Warsaw"], ["Bytom", "PL", 50.35, 18.92, "Europe/Warsaw"], ["Chorzów", "PL", 50.3, 18.95, "Europe/Warsaw"], ["Częstochowa", "PL", 50.81, 19.12, "Europe/Warsaw"], ["Dąbrowa Górnicza", "PL", 50.32, 19.19, "Europe/Warsaw"], ["Elbląg", "PL", 54.16, 19.41, "Europe/Warsaw"], ["Gliwice", "PL", 50.3, 18.67, "Europe/Warsaw"], ["Gorzów Wielkopolski", "PL", 52.74, 15.24, "Europe/Warsaw"], ["Grudziądz", "PL", 53.49, 18.75, "Europe/Warsaw"], ["Jaworzno", "PL", 50.2, 19.27, "Europe/Warsaw"], ["Jelenia Góra", "PL", 50.9, 15.73, "Europe/Warsaw"], ["Kalisz", "PL", 51.76, 18.09, "Europe/Warsaw"], ["Katowice", "PL", 50.26, 19.03, "Europe/Warsaw"], ["Kielce", "PL", 50.87, 20.63, "Europe/Warsaw"], ["Koszalin", "PL", 54.19, 16.18, "Europe/Warsaw"], ["Legnica", "PL", 51.21, 16.16, "Europe/Warsaw"], ["Lublin", "PL", 51.25, 22.57, "Europe/Warsaw"], ["Nowy Sącz", "PL", 49.62, 20.7, "Europe/Warsaw"], ["Olsztyn", "PL", 53.78, 20.48, "Europe/Warsaw"], ["Opole", "PL", 50.67, 17.92, "Europe/Warsaw"], ["Płock", "PL", 52.55, 19.71, "Europe/Warsaw"], ["Radom", "PL", 51.4, 21.15, "Europe/Warsaw"], ["Ruda Śląska", "PL", 50.26, 18.86, "Europe/Warsaw"], ["Rybnik", "PL", 50.1, 18.55, "Europe/Warsaw"], ["Rzeszów", "PL", 50.04, 22.0, "Europe/Warsaw"], ["Siedlce", "PL", 52.17, 22.28, "Europe/Warsaw"], ["Sosnowiec", "PL", 50.28, 19.1, "Europe/Warsaw"], ["Suwałki", "PL", 54.1, 22.93, "Europe/Warsaw"], ["Tarnów", "PL", 50.01, 20.99, "Europe/Warsaw"], ["Toruń", "PL", 53.01, 18.6, "Europe/Warsaw"], ["Tychy", "PL", 50.13, 19.0, "Europe/Warsaw"], ["Wałbrzych", "PL", 50.78, 16.28, "Europe/Warsaw"], ["Włocławek", "PL", 52.65, 19.07, "Europe/Warsaw"], ["Zabrze", "PL", 50.32, 18.79, "Europe/Warsaw"], ["Zielona Góra", "PL", 51.94, 15.51, "Europe/Warsaw"], ["Almere", "NL", 52.37, 5.22, "Europe/Amsterdam"], ["Amersfoort", "NL", 52.16, 5.39, "Europe/Amsterdam"], ["Apeldoorn", "NL", 52.21, 5.97, "Europe/Amsterdam"], ["Arnhem", "NL", 51.98, 5.91, "Europe/Amsterdam"], ["Breda", "NL", 51.59, 4.78, "Europe/Amsterdam"], ["Delft", "NL", 52.01, 4.36, "Europe/Amsterdam"], ["Dordrecht", "NL", 51.81, 4.67, "Europe/Amsterdam"], ["Enschede", "NL", 52.22, 6.9, "Europe/Amsterdam"], ["Haarlem", "NL", 52.38, 4.64, "Europe/Amsterdam"], ["Leiden", "NL", 52.16, 4.49, "Europe/Amsterdam"], ["Maastricht", "NL", 50.85, 5.69, "Europe/Amsterdam"], ["Nijmegen", "NL", 51.84, 5.86, "Europe/Amsterdam"], ["'s-Hertogenbosch", "NL", 51.69, 5.3, "Europe/Amsterdam"], ["Tilburg", "NL", 51.56, 5.09, "Europe/Amsterdam"], ["Zwolle", "NL", 52.51, 6.09, "Europe/Amsterdam"], ["Aalst", "BE", 50.94, 4.04, "Europe/Brussels"], ["Kortrijk", "BE", 50.83, 3.26, "Europe/Brussels"], ["Leuven", "BE", 50.88, 4.7, "Europe/Brussels"], ["Mechelen", "BE", 51.03, 4.48, "Europe/Brussels"], ["Mons", "BE", 50.45, 3.95, "Europe/Brussels"], ["Namur", "BE", 50.47, 4.87, "Europe/Brussels"], ["Oostende", "BE", 51.23, 2.93, "Europe/Brussels"], ["Sint-Niklaas", "BE", 51.16, 4.14, "Europe/Brussels"], ["Tournai", "BE", 50.61, 3.39, "Europe/Brussels"], ["Verviers", "BE", 50.59, 5.86, "Europe/Brussels"], ["Winterthur", "CH", 47.5, 8.72, "Europe/Zurich"], ["Luzern", "CH", 47.05, 8.31, "Europe/Zurich"], ["St. Gallen", "CH", 47.42, 9.38, "Europe/Zurich"], ["Biel/Bienne", "CH", 47.14, 7.25, "Europe/Zurich"], ["Thun", "CH", 46.76, 7.63, "Europe/Zurich"], ["Schaffhausen", "CH", 47.7, 8.63, "Europe/Zurich"], ["Chur", "CH", 46.85, 9.53, "Europe/Zurich"], ["Fribourg", "CH", 46.8, 7.15, "Europe/Zurich"], ["Neuchâtel", "CH", 47.0, 6.93, "Europe/Zurich"], ["Sion", "CH", 46.23, 7.36, "Europe/Zurich"], ["Klagenfurt", "AT", 46.62, 14.31, "Europe/Vienna"], ["Villach", "AT", 46.61, 13.85, "Europe/Vienna"], ["Wels", "AT", 48.16, 14.03, "Europe/Vienna"], ["Sankt Pölten", "AT", 48.2, 15.63, "Europe/Vienna"], ["Dornbirn", "AT", 47.41, 9.74, "Europe/Vienna"], ["Bregenz", "AT", 47.5, 9.75, "Europe/Vienna"], ["Eisenstadt", "AT", 47.85, 16.52, "Europe/Vienna"], ["Amadora", "PT", 38.76, -9.23, "Europe/Lisbon"], ["Braga", "PT", 41.55, -8.42, "Europe/Lisbon"], ["Setúbal", "PT", 38.52, -8.89, "Europe/Lisbon"], ["Queluz", "PT", 38.76, -9.25, "Europe/Lisbon"], ["Vila Nova de Gaia", "PT", 41.13, -8.62, "Europe/Lisbon"], ["Guimarães", "PT", 41.44, -8.29, "Europe/Lisbon"], ["Aveiro", "PT", 40.64, -8.65, "Europe/Lisbon"], ["Viseu", "PT", 40.66, -7.91, "Europe/Lisbon"], ["Leiria", "PT", 39.74, -8.81, "Europe/Lisbon"], ["Évora", "PT", 38.57, -7.91, "Europe/Lisbon"], ["Portimão", "PT", 37.14, -8.54, "Europe/Lisbon"], ["Viana do Castelo", "PT", 41.69, -8.83, "Europe/Lisbon"], ["Patras", "GR", 38.25, 21.73, "Europe/Athens"], ["Larissa", "GR", 39.64, 22.42, "Europe/Athens"], ["Volos", "GR", 39.36, 22.94, "Europe/Athens"], ["Ioannina", "GR", 39.67, 20.85, "Europe/Athens"], ["Chalcis", "GR", 38.46, 23.6, "Europe/Athens"], ["Chania", "GR", 35.51, 24.02, "Europe/Athens"], ["Rhodes", "GR", 36.43, 28.22, "Europe/Athens"], ["Kalamata", "GR", 37.04, 22.11, "Europe/Athens"], ["Kavala", "GR", 40.94, 24.41, "Europe/Athens"], ["Serres", "GR", 41.09, 23.55, "Europe/Athens"], ["Alexandroupoli", "GR", 40.85, 25.87, "Europe/Athens"], ["Corfu", "GR", 39.62, 19.92, "Europe/Athens"], ["Mytilene", "GR", 39.11, 26.55, "Europe/Athens"], ["Plzeň", "CZ", 49.75, 13.38, "Europe/Prague"], ["Liberec", "CZ", 50.77, 15.06, "Europe/Prague"], ["Olomouc", "CZ", 49.59, 17.25, "Europe/Prague"], ["České Budějovice", "CZ", 48.97, 14.47, "Europe/Prague"], ["Hradec Králové", "CZ", 50.21, 15.83, "Europe/Prague"], ["Ústí nad Labem", "CZ", 50.66, 14.03, "Europe/Prague"], ["Pardubice", "CZ", 50.04, 15.78, "Europe/Prague"], ["Zlín", "CZ", 49.23, 17.67, "Europe/Prague"], ["Havířov", "CZ", 49.78, 18.25, "Europe/Prague"], ["Kladno", "CZ", 50.15, 14.1, "Europe/Prague"], ["Most", "CZ", 50.5, 13.64, "Europe/Prague"], ["Opava", "CZ", 49.94, 17.9, "Europe/Prague"], ["Frýdek-Místek", "CZ", 49.69, 18.35, "Europe/Prague"], ["Karviná", "CZ", 49.85, 18.54, "Europe/Prague"], ["Jihlava", "CZ", 49.4, 15.59, "Europe/Prague"], ["Teplice", "CZ", 50.64, 13.82, "Europe/Prague"], ["Děčín", "CZ", 50.78, 14.21, "Europe/Prague"], ["Karlovy Vary", "CZ", 50.23, 12.87, "Europe/Prague"], ["Košice", "SK", 48.72, 21.26, "Europe/Bratislava"], ["Prešov", "SK", 49.0, 21.24, "Europe/Bratislava"], ["Žilina", "SK", 49.22, 18.74, "Europe/Bratislava"], ["Banská Bystrica", "SK", 48.74, 19.15, "Europe/Bratislava"], ["Nitra", "SK", 48.31, 18.09, "Europe/Bratislava"], ["Trnava", "SK", 48.38, 17.59, "Europe/Bratislava"], ["Trenčín", "SK", 48.89, 18.04, "Europe/Bratislava"], ["Martin", "SK", 49.07, 18.92, "Europe/Bratislava"], ["Poprad", "SK", 49.06, 20.3, "Europe/Bratislava"], ["Prievidza", "SK", 48.77, 18.63, "Europe/Bratislava"], ["Zvolen", "SK", 48.58, 19.13, "Europe/Bratislava"], ["Szeged", "HU", 46.25, 20.15, "Europe/Budapest"], ["Miskolc", "HU", 48.1, 20.78, "Europe/Budapest"], ["Pécs", "HU", 46.07, 18.23, "Europe/Budapest"], ["Győr", "HU", 47.68, 17.63, "Europe/Budapest"], ["Nyíregyháza", "HU", 47.96, 21.72, "Europe/Budapest"], ["Kecskemét", "HU", 46.91, 19.69, "Europe/Budapest"], ["Székesfehérvár", "HU", 47.19, 18.41, "Europe/Budapest"], ["Szombathely", "HU", 47.23, 16.62, "Europe/Budapest"], ["Szolnok", "HU", 47.18, 20.2, "Europe/Budapest"], ["Tatabánya", "HU", 47.58, 18.39, "Europe/Budapest"], ["Kaposvár", "HU", 46.36, 17.78, "Europe/Budapest"], ["Békéscsaba", "HU", 46.68, 21.09, "Europe/Budapest"], ["Veszprém", "HU", 47.09, 17.91, "Europe/Budapest"], ["Zalaegerszeg", "HU", 46.84, 16.84, "Europe/Budapest"], ["Eger", "HU", 47.9, 20.37, "Europe/Budapest"], ["Nagykanizsa", "HU", 46.45, 16.99, "Europe/Budapest"], ["Dunaújváros", "HU", 46.96, 18.94, "Europe/Budapest"], ["Constanța", "RO", 44.18, 28.63, "Europe/Bucharest"], ["Craiova", "RO", 44.33, 23.8, "Europe/Bucharest"], ["Brașov", "RO", 45.65, 25.6, "Europe/Bucharest"], ["Galați", "RO", 45.44, 28.06, "Europe/Bucharest"], ["Ploiești", "RO", 44.94, 26.03, "Europe/Bucharest"], ["Oradea", "RO", 47.05, 21.93, "Europe/Bucharest"], ["Brăila", "RO", 45.27, 27.97, "Europe/Bucharest"], ["Arad", "RO", 46.19, 21.32, "Europe/Bucharest"], ["Pitești", "RO", 44.86, 24.87, "Europe/Bucharest"], ["Sibiu", "RO", 45.8, 24.15, "Europe/Bucharest"], ["Bacău", "RO", 46.57, 26.91, "Europe/Bucharest"], ["Târgu Mureș", "RO", 46.54, 24.56, "Europe/Bucharest"], ["Baia Mare", "RO", 47.66, 23.57, "Europe/Bucharest"], ["Buzău", "RO", 45.15, 26.82, "Europe/Bucharest"], ["Botoșani", "RO", 47.74, 26.67, "Europe/Bucharest"], ["Satu Mare", "RO", 47.79, 22.89, "Europe/Bucharest"], ["Suceava", "RO", 47.65, 26.26, "Europe/Bucharest"], ["Piatra Neamț", "RO", 46.93, 26.37, "Europe/Bucharest"], ["Drobeta-Turnu Severin", "RO", 44.63, 22.66, "Europe/Bucharest"], ["Focșani", "RO", 45.7, 27.18, "Europe/Bucharest"], ["Târgu Jiu", "RO", 45.04, 23.28, "Europe/Bucharest"], ["Tulcea", "RO", 45.18, 28.8, "Europe/Bucharest"], ["Târgoviște", "RO", 44.93, 25.46, "Europe/Bucharest"], ["Reșița", "RO", 45.3, 21.89, "Europe/Bucharest"], ["Burgas", "BG", 42.5, 27.47, "Europe/Sofia"], ["Ruse", "BG", 43.84, 25.96, "Europe/Sofia"], ["Stara Zagora", "BG", 42.43, 25.63, "Europe/Sofia"], ["Pleven", "BG", 43.42, 24.62, "Europe/Sofia"], ["Sliven", "BG", 42.68, 26.33, "Europe/Sofia"], ["Dobrich", "BG", 43.57, 27.83, "Europe/Sofia"], ["Shumen", "BG", 43.27, 26.93, "Europe/Sofia"], ["Pernik", "BG", 42.6, 23.03, "Europe/Sofia"], ["Haskovo", "BG", 41.93, 25.56, "Europe/Sofia"], ["Yambol", "BG", 42.48, 26.5, "Europe/Sofia"], ["Pazardzhik", "BG", 42.19, 24.33, "Europe/Sofia"], ["Blagoevgrad", "BG", 42.02, 23.1, "Europe/Sofia"], ["Veliko Tarnovo", "BG", 43.08, 25.65, "Europe/Sofia"], ["Vratsa", "BG", 43.2, 23.55, "Europe/Sofia"], ["Gabrovo", "BG", 42.87, 25.32, "Europe/Sofia"], ["Vidin", "BG", 43.99, 22.88, "Europe/Sofia"], ["Asenovgrad", "BG", 42.01, 24.88, "Europe/Sofia"], ["Kazanlak", "BG", 42.62, 25.4, "Europe/Sofia"], ["Kyustendil", "BG", 42.28, 22.69, "Europe/Sofia"], ["Kardzhali", "BG", 41.65, 25.37, "Europe/Sofia"], ["Novi Sad", "RS", 45.26, 19.83, "Europe/Belgrade"], ["Niš", "RS", 43.32, 21.9, "Europe/Belgrade"], ["Kragujevac", "RS", 44.02, 20.92, "Europe/Belgrade"], ["Subotica", "RS", 46.1, 19.67, "Europe/Belgrade"], ["Zrenjanin", "RS", 45.38, 20.39, "Europe/Belgrade"], ["Pančevo", "RS", 44.87, 20.64, "Europe/Belgrade"], ["Čačak", "RS", 43.89, 20.35, "Europe/Belgrade"], ["Kruševac", "RS", 43.58, 21.33, "Europe/Belgrade"], ["Kraljevo", "RS", 43.72, 20.69, "Europe/Belgrade"], ["Novi Pazar", "RS", 43.14, 20.52, "Europe/Belgrade"], ["Smederevo", "RS", 44.66, 20.93, "Europe/Belgrade"], ["Leskovac", "RS", 43.0, 21.95, "Europe/Belgrade"], ["Užice", "RS", 43.86, 19.85, "Europe/Belgrade"], ["Valjevo", "RS", 44.27, 19.89, "Europe/Belgrade"], ["Vranje", "RS", 42.55, 21.9, "Europe/Belgrade"], ["Šabac", "RS", 44.75, 19.69, "Europe/Belgrade"], ["Sombor", "RS", 45.77, 19.12, "Europe/Belgrade"], ["Požarevac", "RS", 44.62, 21.19, "Europe/Belgrade"], ["Pirot", "RS", 43.16, 22.59, "Europe/Belgrade"], ["Zaječar", "RS", 43.9, 22.28, "Europe/Belgrade"], ["Rijeka", "HR", 45.33, 14.44, "Europe/Zagreb"], ["Osijek", "HR", 45.56, 18.68, "Europe/Zagreb"], ["Zadar", "HR", 44.12, 15.23, "Europe/Zagreb"], ["Pula", "HR", 44.87, 13.85, "Europe/Zagreb"], ["Slavonski Brod", "HR", 45.16, 18.02, "Europe/Zagreb"], ["Karlovac", "HR", 45.49, 15.55, "Europe/Zagreb"], ["Varaždin", "HR", 46.31, 16.34, "Europe/Zagreb"], ["Šibenik", "HR", 43.73, 15.89, "Europe/Zagreb"], ["Sisak", "HR", 45.49, 16.37, "Europe/Zagreb"], ["Vinkovci", "HR", 45.29, 18.81, "Europe/Zagreb"], ["Vukovar", "HR", 45.35, 19.0, "Europe/Zagreb"], ["Bjelovar", "HR", 45.9, 16.84, "Europe/Zagreb"], ["Koprivnica", "HR", 46.16, 16.83, "Europe/Zagreb"], ["Požega", "HR", 45.33, 17.68, "Europe/Zagreb"], ["Đakovo", "HR", 45.31, 18.41, "Europe/Zagreb"], ["Maribor", "SI", 46.55, 15.65, "Europe/Ljubljana"], ["Kranj", "SI", 46.24, 14.36, "Europe/Ljubljana"], ["Celje", "SI", 46.24, 15.26, "Europe/Ljubljana"], ["Koper", "SI", 45.55, 13.73, "Europe/Ljubljana"], ["Novo Mesto", "SI", 45.8, 15.17, "Europe/Ljubljana"], ["Velenje", "SI", 46.36, 15.11, "Europe/Ljubljana"], ["Nova Gorica", "SI", 45.96, 13.65, "Europe/Ljubljana"], ["Krško", "SI", 45.96, 15.49, "Europe/Ljubljana"], ["Ptuj", "SI", 46.42, 15.87, "Europe/Ljubljana"], ["Kamnik", "SI", 46.23, 14.61, "Europe/Ljubljana"], ["Banja Luka", "BA", 44.77, 17.19, "Europe/Sarajevo"], ["Tuzla", "BA", 44.54, 18.67, "Europe/Sarajevo"], ["Zenica", "BA", 44.2, 17.91, "Europe/Sarajevo"], ["Mostar", "BA", 43.34, 17.81, "Europe/Sarajevo"], ["Bijeljina", "BA", 44.76, 19.22, "Europe/Sarajevo"], ["Brčko", "BA", 44.87, 18.81, "Europe/Sarajevo"], ["Bihać", "BA", 44.82, 15.87, "Europe/Sarajevo"], ["Prijedor", "BA", 44.98, 16.71, "Europe/Sarajevo"], ["Doboj", "BA", 44.73, 18.09, "Europe/Sarajevo"], ["Trebinje", "BA", 42.71, 18.35, "Europe/Sarajevo"], ["Podgorica", "ME", 42.44, 19.26, "Europe/Podgorica"], ["Nikšić", "ME", 42.77, 18.94, "Europe/Podgorica"], ["Herceg Novi", "ME", 42.45, 18.54, "Europe/Podgorica"], ["Bar", "ME", 42.09, 19.1, "Europe/Podgorica"], ["Budva", "ME", 42.29, 18.84, "Europe/Podgorica"], ["Kotor", "ME", 42.42, 18.77, "Europe/Podgorica"], ["Bitola", "MK", 41.03, 21.33, "Europe/Skopje"], ["Kumanovo", "MK", 42.13, 21.72, "Europe/Skopje"], ["Prilep", "MK", 41.35, 21.55, "Europe/Skopje"], ["Tetovo", "MK", 42.01, 20.97, "Europe/Skopje"], ["Ohrid", "MK", 41.12, 20.8, "Europe/Skopje"], ["Veles", "MK", 41.72, 21.78, "Europe/Skopje"], ["Štip", "MK", 41.74, 22.19, "Europe/Skopje"], ["Gostivar", "MK", 41.8, 20.91, "Europe/Skopje"], ["Strumica", "MK", 41.44, 22.64, "Europe/Skopje"], ["Durrës", "AL", 41.32, 19.45, "Europe/Tirane"], ["Vlorë", "AL", 40.47, 19.49, "Europe/Tirane"], ["Shkodër", "AL", 42.07, 19.51, "Europe/Tirane"], ["Fier", "AL", 40.72, 19.56, "Europe/Tirane"], ["Korçë", "AL", 40.62, 20.78, "Europe/Tirane"], ["Elbasan", "AL", 41.11, 20.08, "Europe/Tirane"], ["Berat", "AL", 40.71, 19.95, "Europe/Tirane"], ["Lushnjë", "AL", 40.94, 19.7, "Europe/Tirane"], ["Pristina", "XK", 42.66, 21.17, "Europe/Belgrade"], ["Prizren", "XK", 42.21, 20.74, "Europe/Belgrade"], ["Mitrovica", "XK", 42.89, 20.87, "Europe/Belgrade"], ["Peja", "XK", 42.66, 20.29, "Europe/Belgrade"], ["Gjakova", "XK", 42.38, 20.43, "Europe/Belgrade"], ["Gjilan", "XK", 42.46, 21.47, "Europe/Belgrade"], ["Ferizaj", "XK", 42.37, 21.15, "Europe/Belgrade"]];
+
+/* MULTILINGUAL TEXT DICTIONARY (nb, en, sv, da, de, es) */
+const TEXTS = {"nb": {"year_in_light": "ÅRET I LYS", "sub_all_four": "Dagslys, skumring, midnattssol og mørketid gjennom årets {days} døgn", "sub_ms": "Dagslys, skumring og midnattssol gjennom årets {days} døgn", "sub_pn": "Dagslys, skumring og mørketid gjennom årets {days} døgn", "sub_twilight": "Dagslys og skumring gjennom årets {days} døgn", "months_upper": ["", "JANUAR", "FEBRUAR", "MARS", "APRIL", "MAI", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"], "months_lower": ["", "januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"], "months_short_upper": ["", "JAN", "FEB", "MAR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DES"], "weekdays": ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"], "weekdays_short": ["man", "tir", "ons", "tor", "fre", "lør", "søn"], "sunrise": "Soloppgang", "sunset": "Solnedgang", "phases": {"new": "Nymåne", "first_quarter": "Første kvarter", "full": "Fullmåne", "third_quarter": "Siste kvarter"}, "moon_phases_label": "Månefaser:", "moon_phases_sub": "{count} faser i {year} ({tz})", "legend": [["dag", "Dagslys", "Sola over horisonten (&gt; -0,833°)"], ["borgerlig", "Borgerlig skumring", "Skumring &amp; daggry (-0,833° til -6°)"], ["nautisk", "Nautisk skumring", "Horisonten skimtes (-6° til -12°)"], ["astronomisk", "Astronomisk skumring", "Stjernene trer fram (-12° til -18°)"], ["natt", "Mørk natt", "Fullt stjernemørke (&lt; -18°)"]], "sun_returns_title": "{day}. {month} · SOLA TILBAKE", "sun_returns_desc": "Første soloppgang kl. {time} (±1 døgn)", "midnight_sun_title": "MIDNATTSSOL · {days} DØGN", "midnight_sun_desc": "{d1}. {m1} – {d2}. {m2} · Sola over horisonten (±1 døgn)", "polar_night_title": "{day}. {month} · MØRKETID STARTER", "polar_night_desc": "Siste solnedgang {d_last}. {m_last} (±1 døgn)", "solstice_spring": "{day}. MAR · VÅRJEVNDØGN", "solstice_summer": "{day}. JUN · SOMMERSOLVERV", "solstice_autumn": "{day}. SEP · HØSTJEVNDØGN", "solstice_winter": "{day}. DES · VINTERSOLVERV", "solstice_spring_south": "{day}. SEP · VÅRJEVNDØGN", "solstice_summer_south": "{day}. DES · SOMMERSOLVERV", "solstice_autumn_south": "{day}. MAR · HØSTJEVNDØGN", "solstice_winter_south": "{day}. JUN · VINTERSOLVERV", "dst_spring": "{day}. {m}: Sommertid (+1t)", "dst_fall": "{day}. {m}: Vintertid (-1t)", "caveat": "Forbehold om atmosfærisk refraksjon: Beregnet etter NOAAs solposisjonsformler (Meeus). Atmosfærisk refraksjon varierer med lufttrykk og temperatur; observerte tider kan avvike med noen minutter.", "edge_uncertainty": "Grenseusikkerhet: Første og siste dag for mørketid og midnattssol er beregnet med astronomiske formler og har en usikkerhet på ±1 døgn ved horisonttangering.", "white_nights": "Lysnetter om sommeren: I sommermånedene synker sola aldri under skumringsgrensen; sammenhengende skumring og ingen mørk natt.", "ai_mark": "Laget av et KI-system (Arrodi, arrodi.pages.dev). Written by an AI system. A human is responsible for it and reads replies.", "licence_footer": "Lisens: Creative Commons Navngivelse 4.0 Internasjonal (CC BY 4.0). Arrodi (arrodi.pages.dev). Posisjon: {pos}. Tidssone: {tz}."}, "en": {"year_in_light": "THE YEAR IN LIGHT", "sub_all_four": "Daylight, twilight, midnight sun and polar night throughout the {days} days of the year", "sub_ms": "Daylight, twilight and midnight sun throughout the {days} days of the year", "sub_pn": "Daylight, twilight and polar night throughout the {days} days of the year", "sub_twilight": "Daylight and twilight throughout the {days} days of the year", "months_upper": ["", "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"], "months_lower": ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], "months_short_upper": ["", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "weekdays_short": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], "sunrise": "Sunrise", "sunset": "Sunset", "phases": {"new": "New Moon", "first_quarter": "First Quarter", "full": "Full Moon", "third_quarter": "Third Quarter"}, "moon_phases_label": "Moon phases:", "moon_phases_sub": "{count} phases in {year} ({tz})", "legend": [["dag", "Daylight", "Sun above horizon (&gt; -0.833°)"], ["borgerlig", "Civil twilight", "Dawn &amp; dusk (-0.833° to -6°)"], ["nautisk", "Nautical twilight", "Horizon visible (-6° to -12°)"], ["astronomisk", "Astronomical twilight", "Stars emerge (-12° to -18°)"], ["natt", "Night", "Complete darkness (&lt; -18°)"]], "sun_returns_title": "{month} {day} · SUN RETURNS", "sun_returns_desc": "First sunrise at {time} (±1 day)", "midnight_sun_title": "MIDNIGHT SUN · {days} DAYS", "midnight_sun_desc": "{m1} {d1} – {m2} {d2} · Sun above horizon (±1 day)", "polar_night_title": "{month} {day} · POLAR NIGHT BEGINS", "polar_night_desc": "Last sunset {m_last} {d_last} (±1 day)", "solstice_spring": "{day} MAR · SPRING EQUINOX", "solstice_summer": "{day} JUN · SUMMER SOLSTICE", "solstice_autumn": "{day} SEP · AUTUMN EQUINOX", "solstice_winter": "{day} DEC · WINTER SOLSTICE", "solstice_spring_south": "{day} SEP · SPRING EQUINOX", "solstice_summer_south": "{day} DEC · SUMMER SOLSTICE", "solstice_autumn_south": "{day} MAR · AUTUMN EQUINOX", "solstice_winter_south": "{day} JUN · WINTER SOLSTICE", "dst_spring": "{m} {day}: Daylight saving time (+1h)", "dst_fall": "{m} {day}: Standard time (-1h)", "caveat": "Atmospheric refraction notice: Calculated using NOAA solar position equations (Meeus). Atmospheric refraction varies with air pressure and temperature; observed times may vary by several minutes.", "edge_uncertainty": "Boundary uncertainty: First and last days of polar night and midnight sun are calculated using astronomical formulas with an uncertainty of ±1 day at horizon tangency.", "white_nights": "White nights in summer: During summer months the sun never sinks below the twilight threshold; continuous twilight and no true night.", "ai_mark": "Made by an AI system (Arrodi, arrodi.pages.dev). Written by an AI system. A human is responsible for it and reads replies.", "licence_footer": "Licence: Creative Commons Attribution 4.0 International (CC BY 4.0). Arrodi (arrodi.pages.dev). Position: {pos}. Time zone: {tz}."}, "sv": {"year_in_light": "ÅRET I LJUS", "sub_all_four": "Dagsljus, skymning, midnattssol och polarnatt under årets {days} dygn", "sub_ms": "Dagsljus, skymning och midnattssol under årets {days} dygn", "sub_pn": "Dagsljus, skymning och polarnatt under årets {days} dygn", "sub_twilight": "Dagsljus och skymning under årets {days} dygn", "months_upper": ["", "JANUARI", "FEBRUARI", "MARS", "APRIL", "MAJ", "JUNI", "JULI", "AUGUSTI", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DECEMBER"], "months_lower": ["", "januari", "februari", "mars", "april", "maj", "juni", "juli", "augusti", "september", "oktober", "november", "december"], "months_short_upper": ["", "JAN", "FEB", "MAR", "APR", "MAJ", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEC"], "weekdays": ["måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag", "söndag"], "weekdays_short": ["mån", "tis", "ons", "tor", "fre", "lör", "sön"], "sunrise": "Soluppgång", "sunset": "Solnedgång", "phases": {"new": "Nymåne", "first_quarter": "Första kvarteret", "full": "Fullmåne", "third_quarter": "Sista kvarteret"}, "moon_phases_label": "Månfaser:", "moon_phases_sub": "{count} faser under {year} ({tz})", "legend": [["dag", "Dagsljus", "Solen över horisonten (&gt; -0,833°)"], ["borgerlig", "Borgerlig skymning", "Gryning &amp; skymning (-0,833° till -6°)"], ["nautisk", "Nautisk skymning", "Horisonten synlig (-6° til -12°)"], ["astronomisk", "Astronomisk skymning", "Stjärnorna framträder (-12° till -18°)"], ["natt", "Mörk natt", "Fullständigt mörker (&lt; -18°)"]], "sun_returns_title": "{day} {month} · SOLEN TILLBAKA", "sun_returns_desc": "Första soluppgången kl. {time} (±1 dygn)", "midnight_sun_title": "MIDNATTSSOL · {days} DYGN", "midnight_sun_desc": "{d1} {m1} – {d2} {m2} · Solen över horisonten (±1 dygn)", "polar_night_title": "{day} {month} · POLARNATTEN BÖRJAR", "polar_night_desc": "Sista solnedgången {d_last} {m_last} (±1 dygn)", "solstice_spring": "{day} MAR · VÅRDAGJÄMNING", "solstice_summer": "{day} JUN · SOMMARSOLSTÅND", "solstice_autumn": "{day} SEP · HÖSTDAGJÄMNING", "solstice_winter": "{day} DEC · VINTERSOLSTÅND", "solstice_spring_south": "{day} SEP · VÅRDAGJÄMNING", "solstice_summer_south": "{day} DEC · SOMMARSOLSTÅND", "solstice_autumn_south": "{day} MAR · HÖSTDAGJÄMNING", "solstice_winter_south": "{day} JUN · VINTERSOLSTÅND", "dst_spring": "{day} {m}: Sommartid (+1h)", "dst_fall": "{day} {m}: Normaltid (-1h)", "caveat": "Förbehåll för atmosfärisk refraktion: Beräknat enligt NOAA:s solpositionsekvationer (Meeus). Atmosfärisk refraktion varierar med lufttryck och temperatur; observerade tider kan avvika med några minuter.", "edge_uncertainty": "Gränsosäkerhet: Första och sista dagen för polarnatt och midnattssol beräknas med astronomiska formler med en osäkerhet på ±1 dygn vid horisonttangering.", "white_nights": "Ljusa nätter under sommaren: Under sommarmånaderna sjunker solen aldrig under skymningsgränsen; kontinuerlig skymning och ingen mörk natt.", "ai_mark": "Skapad av ett AI-system (Arrodi, arrodi.pages.dev). Written by an AI system. A human is responsible for it and reads replies.", "licence_footer": "Licens: Creative Commons Erkännande 4.0 Internationell (CC BY 4.0). Arrodi (arrodi.pages.dev). Position: {pos}. Tidszon: {tz}."}, "da": {"year_in_light": "ÅRET I LYS", "sub_all_four": "Dagslys, tusmørke, midnatssol og polarnat gennem årets {days} døgn", "sub_ms": "Dagslys, tusmørke og midnatssol gennem årets {days} døgn", "sub_pn": "Dagslys, tusmørke og polarnat gennem årets {days} døgn", "sub_twilight": "Dagslys og tusmørke gennem årets {days} døgn", "months_upper": ["", "JANUAR", "FEBRUAR", "MARTS", "APRIL", "MAJ", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DECEMBER"], "months_lower": ["", "januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"], "months_short_upper": ["", "JAN", "FEB", "MAR", "APR", "MAJ", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEC"], "weekdays": ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"], "weekdays_short": ["man", "tir", "ons", "tor", "fre", "lør", "søn"], "sunrise": "Solopgang", "sunset": "Solnedgang", "phases": {"new": "Nymåne", "first_quarter": "Første kvarter", "full": "Fuldmåne", "third_quarter": "Sidste kvarter"}, "moon_phases_label": "Månefaser:", "moon_phases_sub": "{count} faser i {year} ({tz})", "legend": [["dag", "Dagslys", "Solen over horisonten (&gt; -0,833°)"], ["borgerlig", "Borgerligt tusmørke", "Morgengry &amp; skumring (-0,833° til -6°)"], ["nautisk", "Nautisk tusmørke", "Horisonten synlig (-6° til -12°)"], ["astronomisk", "Astronomisk tusmørke", "Stjernerne træder frem (-12° til -18°)"], ["natt", "Mørk nat", "Fuldstændigt mørke (&lt; -18°)"]], "sun_returns_title": "{day}. {month} · SOLEN TILBAGE", "sun_returns_desc": "Første solopgang kl. {time} (±1 døgn)", "midnight_sun_title": "MIDNATSSOL · {days} DØGN", "midnight_sun_desc": "{d1}. {m1} – {d2}. {m2} · Solen over horisonten (±1 døgn)", "polar_night_title": "{day}. {month} · POLARNAT STARTER", "polar_night_desc": "Sidste solnedgang {d_last}. {m_last} (±1 døgn)", "solstice_spring": "{day}. MAR · FORÅRSJÆVNDØGN", "solstice_summer": "{day}. JUN · SOMMERSOLHVERV", "solstice_autumn": "{day}. SEP · EFTERÅRSJÆVNDØGN", "solstice_winter": "{day}. DEC · VINTERSOLHVERV", "solstice_spring_south": "{day}. SEP · FORÅRSJÆVNDØGN", "solstice_summer_south": "{day}. DEC · SOMMERSOLHVERV", "solstice_autumn_south": "{day}. MAR · EFTERÅRSJÆVNDØGN", "solstice_winter_south": "{day}. JUN · VINTERSOLHVERV", "dst_spring": "{day}. {m}: Sommertid (+1t)", "dst_fall": "{day}. {m}: Vintertid (-1t)", "caveat": "Forbehold for atmosfærisk refraktion: Beregnet efter NOAAs solpositionsformler (Meeus). Atmosfærisk refraktion varierer med lufttryk og temperatur; observerede tider kan afvige med nogle minutter.", "edge_uncertainty": "Grænseusikkerhed: Første og sidste dag for polarnat og midnatssol er beregnet med astronomiske formler med en usikkerhed på ±1 døgn ved horisonttangering.", "white_nights": "Lyse nætter om sommeren: I sommermånederne sænker solen sig aldrig under tusmørkegrænsen; sammenhængende tusmørke og ingen mørk nat.", "ai_mark": "Lavet af et AI-system (Arrodi, arrodi.pages.dev). Written by an AI system. A human is responsible for it and reads replies.", "licence_footer": "Licens: Creative Commons Navngivelse 4.0 International (CC BY 4.0). Arrodi (arrodi.pages.dev). Position: {pos}. Tidszone: {tz}."}, "de": {"year_in_light": "DAS JAHR IM LICHT", "sub_all_four": "Tageslicht, Dämmerung, Mitternachtssonne und Polarnacht durch die {days} Tage des Jahres", "sub_ms": "Tageslicht, Dämmerung und Mitternachtssonne durch die {days} Tage des Jahres", "sub_pn": "Tageslicht, Dämmerung und Polarnacht durch die {days} Tage des Jahres", "sub_twilight": "Tageslicht und Dämmerung durch die {days} Tage des Jahres", "months_upper": ["", "JANUAR", "FEBRUAR", "MÄRZ", "APRIL", "MAI", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DEZEMBER"], "months_lower": ["", "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"], "months_short_upper": ["", "JAN", "FEB", "MÄR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"], "weekdays": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "weekdays_short": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"], "sunrise": "Sonnenaufgang", "sunset": "Sonnenuntergang", "phases": {"new": "Neumond", "first_quarter": "Erstes Viertel", "full": "Vollmond", "third_quarter": "Letztes Viertel"}, "moon_phases_label": "Mondphasen:", "moon_phases_sub": "{count} Phasen im Jahr {year} ({tz})", "legend": [["dag", "Tageslicht", "Sonne über dem Horizont (&gt; -0,833°)"], ["borgerlig", "Bürgerliche Dämmerung", "Morgengrauen &amp; Dämmerung (-0,833° bis -6°)"], ["nautisk", "Nautische Dämmerung", "Horizont erkennbar (-6° bis -12°)"], ["astronomisk", "Astronomische Dämmerung", "Sterne treten hervor (-12° bis -18°)"], ["natt", "Dunkle Nacht", "Vollständige Dunkelheit (&lt; -18°)"]], "sun_returns_title": "{day}. {month} · SONNE KEHRT ZURÜCK", "sun_returns_desc": "Erster Sonnenaufgang um {time} Uhr (±1 Tag)", "midnight_sun_title": "MITTERNACHTSSONNE · {days} TAGE", "midnight_sun_desc": "{d1}. {m1} – {d2}. {m2} · Sonne über dem Horizont (±1 Tag)", "polar_night_title": "{day}. {month} · POLARNACHT BEGINNT", "polar_night_desc": "Letzter Sonnenuntergang am {d_last}. {m_last} (±1 Tag)", "solstice_spring": "{day}. MÄR · FRÜHLINGS-TAGUNDNACHTGLEICHE", "solstice_summer": "{day}. JUN · SOMMERSONNENWENDE", "solstice_autumn": "{day}. SEP · HERBST-TAGUNDNACHTGLEICHE", "solstice_winter": "{day}. DEZ · WINTERSONNENWENDE", "solstice_spring_south": "{day}. SEP · FRÜHLINGS-TAGUNDNACHTGLEICHE", "solstice_summer_south": "{day}. DEZ · SOMMERSONNENWENDE", "solstice_autumn_south": "{day}. MÄR · HERBST-TAGUNDNACHTGLEICHE", "solstice_winter_south": "{day}. JUN · WINTERSONNENWENDE", "dst_spring": "{day}. {m}: Sommerzeit (+1h)", "dst_fall": "{day}. {m}: Normalzeit (-1h)", "caveat": "Hinweis zur atmosphärischen Refraktion: Berechnet nach den NOAA-Solarposition-Gleichungen (Meeus). Die atmosphärische Refraktion schwankt mit Luftdruck und Temperatur; beobachtete Zeiten können um einige Minuten abweichen.", "edge_uncertainty": "Grenzunsicherheit: Erster und letzter Tag von Polarnacht und Mitternachtssonne werden mit astronomischen Formeln berechnet und weisen bei Horizontberührung eine Unsicherheit von ±1 Tag auf.", "white_nights": "Weiße Nächte im Sommer: In den Sommermonaten sinkt die Sonne nie unter die Dämmerungsgrenze; durchgehende Dämmerung und keine echte Nacht.", "ai_mark": "Erstellt von einem KI-System (Arrodi, arrodi.pages.dev). Written by an AI system. A human is responsible for it and reads replies.", "licence_footer": "Lizenz: Creative Commons Namensnennung 4.0 International (CC BY 4.0). Arrodi (arrodi.pages.dev). Position: {pos}. Zeitzone: {tz}."}, "es": {"year_in_light": "EL AÑO EN LUZ", "sub_all_four": "Luz diurna, crepúsculo, sol de medianoche y noche polar a lo largo de los {days} días del año", "sub_ms": "Luz diurna, crepúsculo y sol de medianoche a lo largo de los {days} días del año", "sub_pn": "Luz diurna, crepúsculo y noche polar a lo largo de los {days} días del año", "sub_twilight": "Luz diurna y crepúsculo a lo largo de los {days} días del año", "months_upper": ["", "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"], "months_lower": ["", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"], "months_short_upper": ["", "ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"], "weekdays": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"], "weekdays_short": ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"], "sunrise": "Amanecer", "sunset": "Atardecer", "phases": {"new": "Luna nueva", "first_quarter": "Cuarto creciente", "full": "Luna llena", "third_quarter": "Cuarto menguante"}, "moon_phases_label": "Fases lunares:", "moon_phases_sub": "{count} fases en {year} ({tz})", "legend": [["dag", "Luz diurna", "Sol sobre el horizonte (&gt; -0,833°)"], ["borgerlig", "Crepúsculo civil", "Amanecer y atardecer (-0,833° a -6°)"], ["nautisk", "Crepúsculo náutico", "Horizonte visible (-6° a -12°)"], ["astronomisk", "Crepúsculo astronómico", "Aparecen las estrellas (-12° a -18°)"], ["natt", "Noche oscura", "Oscuridad total (&lt; -18°)"]], "sun_returns_title": "{day} DE {month} · EL SOL REGRESA", "sun_returns_desc": "Primer amanecer a las {time} (±1 día)", "midnight_sun_title": "SOL DE MEDIANOCHE · {days} DÍAS", "midnight_sun_desc": "{d1} {m1} – {d2} {m2} · Sol sobre el horizonte (±1 día)", "polar_night_title": "{day} DE {month} · COMIENZA LA NOCHE POLAR", "polar_night_desc": "Último atardecer el {d_last} de {m_last} (±1 día)", "solstice_spring": "{day} MAR · EQUINOCCIO DE PRIMAVERA", "solstice_summer": "{day} JUN · SOLSTICIO DE VERANO", "solstice_autumn": "{day} SEP · EQUINOCCIO DE OTOÑO", "solstice_winter": "{day} DIC · SOLSTICIO DE INVIERNO", "solstice_spring_south": "{day} SEP · EQUINOCCIO DE PRIMAVERA", "solstice_summer_south": "{day} DIC · SOLSTICIO DE VERANO", "solstice_autumn_south": "{day} MAR · EQUINOCCIO DE OTOÑO", "solstice_winter_south": "{day} JUN · SOLSTICIO DE INVIERNO", "dst_spring": "{day} {m}: Horario de verano (+1h)", "dst_fall": "{day} {m}: Horario estándar (-1h)", "caveat": "Aviso sobre refracción atmosférica: Calculado según las ecuaciones de posición solar de la NOAA (Meeus). La refracción atmosférica varía con la presión del aire y la temperatura; los tiempos observados pueden diferir unos minutos.", "edge_uncertainty": "Incertidumbre en los límites: El primer y último día de noche polar y sol de medianoche se calculan mediante fórmulas astronómicas con una incertidumbre de ±1 día en la tangencia con el horizonte.", "white_nights": "Noches blancas en verano: Durante los meses de verano, el sol nunca desciende por debajo del umbral crepuscular; crepúsculo continuo y sin noche verdadera.", "ai_mark": "Creado por un sistema de IA (Arrodi, arrodi.pages.dev). Written by an AI system. A human is responsible for it and reads replies.", "licence_footer": "Licencia: Creative Commons Atribución 4.0 Internacional (CC BY 4.0). Arrodi (arrodi.pages.dev). Posición: {pos}. Zona horaria: {tz}."}};
+
+/* UI Localized Labels */
+const UI_TEXTS = {
+  "nb": {
+    title: "ÅRET I LYS",
+    sub: "Dagslys, skumring, månefaser og årstider for et hvilket som helst sted på jorden",
+    lblPlace: "Sted / By (GeoNames)",
+    lblLat: "Breddegrad (°N/S)",
+    lblLon: "Lengdegrad (°Ø/V)",
+    lblYear: "År",
+    lblTz: "Tidssone (IANA / UTC)",
+    lblLang: "Språk",
+    txtPrint: "Skriv ut / PDF",
+    txtPng: "Last ned PNG"
+  },
+  "en": {
+    title: "THE YEAR IN LIGHT",
+    sub: "Daylight, twilight, moon phases and seasons for any place on Earth",
+    lblPlace: "Place / City (GeoNames)",
+    lblLat: "Latitude (°N/S)",
+    lblLon: "Longitude (°E/W)",
+    lblYear: "Year",
+    lblTz: "Time Zone (IANA / UTC)",
+    lblLang: "Language",
+    txtPrint: "Print / PDF",
+    txtPng: "Download PNG"
+  },
+  "sv": {
+    title: "ÅRET I LJUS",
+    sub: "Dagsljus, skymning, månens faser och årstider för vilken plats som helst på jorden",
+    lblPlace: "Plats / Stad (GeoNames)",
+    lblLat: "Latitud (°N/S)",
+    lblLon: "Longitud (°Ö/V)",
+    lblYear: "År",
+    lblTz: "Tidszon (IANA / UTC)",
+    lblLang: "Språk",
+    txtPrint: "Skriv ut / PDF",
+    txtPng: "Ladda ner PNG"
+  },
+  "da": {
+    title: "ÅRET I LYS",
+    sub: "Dagslys, tusmørke, månefaser og årstider for et hvilket som helst sted på jorden",
+    lblPlace: "Sted / By (GeoNames)",
+    lblLat: "Breddegrad (°N/S)",
+    lblLon: "Længdegrad (°Ø/V)",
+    lblYear: "År",
+    lblTz: "Tidszone (IANA / UTC)",
+    lblLang: "Sprog",
+    txtPrint: "Udskriv / PDF",
+    txtPng: "Download PNG"
+  },
+  "de": {
+    title: "DAS JAHR IM LICHT",
+    sub: "Tageslicht, Dämmerung, Mondphasen und Jahreszeiten für jeden Ort der Erde",
+    lblPlace: "Ort / Stadt (GeoNames)",
+    lblLat: "Breitengrad (°N/S)",
+    lblLon: "Längengrad (°O/W)",
+    lblYear: "Jahr",
+    lblTz: "Zeitzone (IANA / UTC)",
+    lblLang: "Sprache",
+    txtPrint: "Drucken / PDF",
+    txtPng: "PNG herunterladen"
+  },
+  "es": {
+    title: "EL AÑO EN LUZ",
+    sub: "Luz solar, crepúsculo, fases de la luna y estaciones para cualquier lugar de la Tierra",
+    lblPlace: "Lugar / Ciudad (GeoNames)",
+    lblLat: "Latitud (°N/S)",
+    lblLon: "Longitud (°E/O)",
+    lblYear: "Año",
+    lblTz: "Zona horaria (IANA / UTC)",
+    lblLang: "Idioma",
+    txtPrint: "Imprimir / PDF",
+    txtPng: "Descargar PNG"
+  }
+};
+
+/* ASTRONOMICAL EPHEMERIS ENGINE (NOAA / Meeus) */
+
+function rad(deg) { return deg * Math.PI / 180.0; }
+function deg(rad) { return rad * 180.0 / Math.PI; }
+
+function jdFromYMDHMS(y, m, d, hour, minute, second) {
+  let dayFrac = d + (hour + minute / 60.0 + second / 3600.0) / 24.0;
+  if (m <= 2) {
+    y -= 1;
+    m += 12;
+  }
+  let a = Math.floor(y / 100);
+  let b = 2 - a + Math.floor(a / 4);
+  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + dayFrac + b - 1524.5;
+}
+
+function sunDeclEqtime(jd) {
+  let t = (jd - 2451545.0) / 36525.0;
+  let l0 = (280.46646 + t * (36000.76983 + 0.0003032 * t)) % 360;
+  if (l0 < 0) l0 += 360;
+  let m = 357.52911 + t * (35999.05029 - 0.0001537 * t);
+  let e = 0.016708634 - t * (0.000042037 + 0.0000001267 * t);
+  let mr = rad(m);
+  let c = (Math.sin(mr) * (1.914602 - t * (0.004817 + 0.000014 * t))
+       + Math.sin(2 * mr) * (0.019993 - 0.000101 * t)
+       + Math.sin(3 * mr) * 0.000289);
+  let true_long = l0 + c;
+  let omega = 125.04 - 1934.136 * t;
+  let app_long = true_long - 0.00569 - 0.00478 * Math.sin(rad(omega));
+  let eps0 = 23 + (26 + (21.448 - t * (46.815 + t * (0.00059 - t * 0.001813))) / 60) / 60;
+  let eps = eps0 + 0.00256 * Math.cos(rad(omega));
+  let decl = deg(Math.asin(Math.sin(rad(eps)) * Math.sin(rad(app_long))));
+  let y = Math.pow(Math.tan(rad(eps / 2)), 2);
+  let l0r = rad(l0);
+  let eqt = 4 * deg(y * Math.sin(2 * l0r) - 2 * e * Math.sin(mr)
+                 + 4 * e * y * Math.sin(mr) * Math.cos(2 * l0r)
+                 - 0.5 * y * y * Math.sin(4 * l0r) - 1.25 * e * e * Math.sin(2 * mr));
+  return { decl: decl, eqt: eqt };
+}
+
+function eventUtc(y, m, d, lat, lon, zenith, rising) {
+  let minutes = 720 - 4 * lon;
+  for (let iter = 0; iter < 6; iter++) {
+    let curJd = jdFromYMDHMS(y, m, d, 0, 0, Math.round(minutes * 60));
+    let res = sunDeclEqtime(curJd);
+    let cos_ha = (Math.cos(rad(zenith)) / (Math.cos(rad(lat)) * Math.cos(rad(res.decl)))
+                  - Math.tan(rad(lat)) * Math.tan(rad(res.decl)));
+    if (cos_ha > 1 || cos_ha < -1) return null;
+    let ha = deg(Math.acos(cos_ha));
+    let noon = 720 - 4 * lon - res.eqt;
+    minutes = rising ? (noon - 4 * ha) : (noon + 4 * ha);
+  }
+  let totalSec = Math.round(minutes * 60);
+  return new Date(Date.UTC(y, m - 1, d, 0, 0, totalSec));
+}
+
+function noaaAltitude(dtUtc, lat, lon) {
+  let y = dtUtc.getUTCFullYear();
+  let m = dtUtc.getUTCMonth() + 1;
+  let d = dtUtc.getUTCDate();
+  let hour = dtUtc.getUTCHours();
+  let minute = dtUtc.getUTCMinutes();
+  let second = dtUtc.getUTCSeconds();
+  let curJd = jdFromYMDHMS(y, m, d, hour, minute, second);
+  let res = sunDeclEqtime(curJd);
+  let utcMin = hour * 60 + minute + second / 60.0;
+  let noon = 720 - 4 * lon - res.eqt;
+  let ha = (utcMin - noon) / 4.0;
+  let phi = rad(lat);
+  let decRad = rad(res.decl);
+  let haRad = rad(ha);
+  let sinAlt = Math.sin(phi) * Math.sin(decRad) + Math.cos(phi) * Math.cos(decRad) * Math.cos(haRad);
+  let clamped = Math.max(-1.0, Math.min(1.0, sinAlt));
+  return deg(Math.asin(clamped));
+}
+
+function getBand(alt) {
+  if (alt >= -0.833) return 'dag';
+  if (alt >= -6.0) return 'borgerlig';
+  if (alt >= -12.0) return 'nautisk';
+  if (alt >= -18.0) return 'astronomisk';
+  return 'natt';
+}
+
+/* LUNAR EPHEMERIS (Meeus Chapter 49) */
+
+function meeusPhaseUtc(k_float, phase_type) {
+  let k = k_float;
+  let T = k / 1236.85;
+  let T2 = T * T;
+  let T3 = T2 * T;
+  let T4 = T3 * T;
+
+  let jde0 = (2451550.09766 + 29.530588861 * k + 0.00015437 * T2
+              - 0.000000150 * T3 + 0.00000000073 * T4);
+
+  let M = rad(((2.5534 + 29.10535670 * k - 0.0000014 * T2 - 0.00000011 * T3) % 360 + 360) % 360);
+  let Mp = rad(((201.5643 + 385.81693528 * k + 0.0107582 * T2 + 0.00001238 * T3 - 0.000000058 * T4) % 360 + 360) % 360);
+  let F = rad(((160.7108 + 390.67050284 * k - 0.0016118 * T2 - 0.0000227 * T3 + 0.000000011 * T4) % 360 + 360) % 360);
+  let Omega = rad(((124.7746 - 1.56375588 * k + 0.0020672 * T2 + 0.0000215 * T3) % 360 + 360) % 360);
+
+  let E = 1.0 - 0.002516 * T - 0.0000074 * T2;
+  let corr = 0.0;
+
+  if (phase_type === 0) { // New
+    corr = (-0.40720 * Math.sin(Mp) + 0.17241 * E * Math.sin(M) + 0.01608 * Math.sin(2 * Mp) + 0.01039 * Math.sin(2 * F)
+            + 0.00739 * E * Math.sin(Mp - M) - 0.00514 * E * Math.sin(Mp + M) + 0.00208 * E * E * Math.sin(2 * M)
+            - 0.00111 * Math.sin(Mp - 2 * F) - 0.00057 * Math.sin(Mp + 2 * F) + 0.00056 * E * Math.sin(2 * Mp + M)
+            - 0.00042 * Math.sin(3 * Mp) + 0.00042 * E * Math.sin(M + 2 * F) + 0.00038 * E * Math.sin(M - 2 * F)
+            - 0.00024 * E * Math.sin(2 * Mp - M) - 0.00017 * Math.sin(Omega));
+  } else if (phase_type === 2) { // Full
+    corr = (-0.40614 * Math.sin(Mp) + 0.17302 * E * Math.sin(M) + 0.01614 * Math.sin(2 * Mp) + 0.00974 * Math.sin(2 * F)
+            + 0.00734 * E * Math.sin(Mp - M) - 0.00515 * E * Math.sin(Mp + M) + 0.00209 * E * E * Math.sin(2 * M)
+            - 0.00111 * Math.sin(Mp - 2 * F) + 0.00057 * Math.sin(Mp + 2 * F) + 0.00056 * E * Math.sin(2 * Mp + M)
+            - 0.00042 * Math.sin(3 * Mp) + 0.00042 * E * Math.sin(M + 2 * F) + 0.00038 * E * Math.sin(M - 2 * F)
+            - 0.00024 * E * Math.sin(2 * Mp - M) - 0.00017 * Math.sin(Omega));
+  } else { // First / Third Quarter
+    corr = (-0.62801 * Math.sin(Mp) + 0.17172 * E * Math.sin(M) - 0.01183 * E * Math.sin(Mp + M) + 0.00862 * Math.sin(2 * Mp)
+            + 0.00804 * Math.sin(2 * F) + 0.00454 * E * Math.sin(Mp - M) + 0.00204 * E * E * Math.sin(2 * M)
+            - 0.00180 * Math.sin(Mp - 2 * F) - 0.00070 * Math.sin(Mp + 2 * F) - 0.00040 * Math.sin(3 * Mp));
+    let W = (0.00306 - 0.00038 * E * Math.cos(M) + 0.00026 * Math.cos(Mp));
+    if (phase_type === 1) corr += W;
+    else corr -= W;
+  }
+
+  let jde = jde0 + corr;
+  let delta_t_days = 69.2 / 86400.0;
+  let jd_utc = jde - delta_t_days;
+  let ms = (jd_utc - 2451545.0) * 86400000.0 + Date.UTC(2000, 0, 1, 12, 0, 0);
+  return new Date(ms);
+}
+
+function computeMoonPhases(year, offsetFn) {
+  let phase_names = ["new", "first_quarter", "full", "third_quarter"];
+  let k_approx = (year - 2000) * 12.3685;
+  let k_start = Math.floor(k_approx) - 2;
+  let k_end = k_start + 16;
+  let results = [];
+  for (let k = k_start; k < k_end; k++) {
+    for (let pt = 0; pt < 4; pt++) {
+      let k_val = k + pt * 0.25;
+      let dt_utc = meeusPhaseUtc(k_val, pt);
+      let off = offsetFn(dt_utc);
+      let dt_loc = new Date(dt_utc.getTime() + off * 3600000.0);
+      if (dt_loc.getUTCFullYear() === year) {
+        results.push({ date: dt_loc, name: phase_names[pt], dtUtc: dt_utc });
+      }
+    }
+  }
+  results.sort((a, b) => a.date - b.date);
+  return results;
+}
+
+/* TIME ZONE RESOLVER */
+
+function makeOffsetFn(tzStr, lon) {
+  let trimmed = (tzStr || "").trim();
+  if (!trimmed) {
+    let comp = Math.round(lon / 15.0);
+    return {
+      fn: function(dt) { return comp; },
+      name: (comp >= 0 ? "UTC+" + comp : "UTC" + comp)
+    };
+  }
+
+  // Numeric offset: e.g. "+1", "-5", "UTC+2", "UTC-05:00"
+  let numMatch = trimmed.match(/^(?:UTC|GMT)?([+-]?\d+(?:\.\d+)?)(?::(\d+))?$/i);
+  if (numMatch) {
+    let h = parseFloat(numMatch[1]);
+    let m = numMatch[2] ? parseFloat(numMatch[2]) : 0.0;
+    let total = h >= 0 ? (h + m / 60.0) : (h - m / 60.0);
+    let signStr = total >= 0 ? "+" + total : "" + total;
+    return {
+      fn: function(dt) { return total; },
+      name: "UTC" + signStr
+    };
+  }
+
+  // Try Intl.DateTimeFormat
+  try {
+    let dtfTest = new Intl.DateTimeFormat('en-US', { timeZone: trimmed, year: 'numeric' });
+    let dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: trimmed,
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric',
+      hour12: false
+    });
+    return {
+      fn: function(dtUtc) {
+        try {
+          let parts = dtf.formatToParts(dtUtc);
+          let p = {};
+          for (let part of parts) p[part.type] = part.value;
+          let h = parseInt(p.hour, 10);
+          if (h === 24) h = 0;
+          let localMs = Date.UTC(parseInt(p.year, 10), parseInt(p.month, 10) - 1, parseInt(p.day, 10), h, parseInt(p.minute, 10), parseInt(p.second, 10));
+          return (localMs - dtUtc.getTime()) / 3600000.0;
+        } catch(e) {
+          return Math.round(lon / 15.0);
+        }
+      },
+      name: trimmed
+    };
+  } catch (e) {
+    let comp = Math.round(lon / 15.0);
+    return {
+      fn: function(dt) { return comp; },
+      name: trimmed + " (UTC" + (comp >= 0 ? "+" + comp : comp) + ")"
+    };
+  }
+}
+
+/* POLAR PHENOMENA */
+
+function detectPolarPhenomena(lat, lon, year) {
+  let isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+  let monthDays = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let polarNightDays = [];
+  let midnightSunDays = [];
+
+  for (let m = 1; m <= 12; m++) {
+    let mLen = monthDays[m - 1];
+    for (let d = 1; d <= mLen; d++) {
+      let ra = eventUtc(year, m, d, lat, lon, 90.0 - (-0.833), true);
+      let sa = eventUtc(year, m, d, lat, lon, 90.0 - (-0.833), false);
+      let dateKey = { year: year, month: m, day: d };
+      if (ra === null && sa === null) {
+        let noonUtc = new Date(Date.UTC(year, m - 1, d, 12, 0, 0) - Math.round(4 * lon * 60000));
+        let altNoon = noaaAltitude(noonUtc, lat, lon);
+        if (altNoon < -0.833) {
+          polarNightDays.push(dateKey);
+        } else {
+          midnightSunDays.push(dateKey);
+        }
+      }
+    }
+  }
+
+  let spansPn = [];
+  if (polarNightDays.length > 0) {
+    let curr = [polarNightDays[0]];
+    for (let i = 1; i < polarNightDays.length; i++) {
+      let prevD = new Date(Date.UTC(curr[curr.length - 1].year, curr[curr.length - 1].month - 1, curr[curr.length - 1].day));
+      let curD = new Date(Date.UTC(polarNightDays[i].year, polarNightDays[i].month - 1, polarNightDays[i].day));
+      if ((curD - prevD) === 86400000) {
+        curr.push(polarNightDays[i]);
+      } else {
+        spansPn.push(curr);
+        curr = [polarNightDays[i]];
+      }
+    }
+    spansPn.push(curr);
+  }
+
+  return { spansPn: spansPn, midnightSunDays: midnightSunDays };
+}
+
+/* POSTER SVG BUILDER */
+
+function renderMoonSymbolSvg(phase, r, latSouth) {
+  r = r || 3.8;
+  if (phase === "new") {
+    return `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="#070c1a" stroke="#cbd5e1" stroke-width="0.9"/>`;
+  } else if (phase === "full") {
+    return `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="#f8fafc" stroke="#475569" stroke-width="0.8"/>`;
+  } else if (phase === "first_quarter") {
+    if (!latSouth) {
+      return `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="#070c1a"/>
+              <path d="M 0.0 -${r.toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 0.0 ${r.toFixed(1)} Z" fill="#f8fafc"/>
+              <circle cx="0" cy="0" r="${r.toFixed(1)}" fill="none" stroke="#cbd5e1" stroke-width="0.8"/>`;
+    } else {
+      return `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="#070c1a"/>
+              <path d="M 0.0 -${r.toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 0 0.0 ${r.toFixed(1)} Z" fill="#f8fafc"/>
+              <circle cx="0" cy="0" r="${r.toFixed(1)}" fill="none" stroke="#cbd5e1" stroke-width="0.8"/>`;
+    }
+  } else if (phase === "third_quarter") {
+    if (!latSouth) {
+      return `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="#070c1a"/>
+              <path d="M 0.0 -${r.toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 0 0.0 ${r.toFixed(1)} Z" fill="#f8fafc"/>
+              <circle cx="0" cy="0" r="${r.toFixed(1)}" fill="none" stroke="#cbd5e1" stroke-width="0.8"/>`;
+    } else {
+      return `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="#070c1a"/>
+              <path d="M 0.0 -${r.toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 0.0 ${r.toFixed(1)} Z" fill="#f8fafc"/>
+              <circle cx="0" cy="0" r="${r.toFixed(1)}" fill="none" stroke="#cbd5e1" stroke-width="0.8"/>`;
+    }
+  }
+  return `<circle cx="0" cy="0" r="${r.toFixed(1)}" fill="#94a3b8"/>`;
+}
+
+function buildSvgPoster(lat, lon, year, lang, placeTitle, tzName, offsetFn) {
+  let t = TEXTS[lang] || TEXTS["nb"];
+  let vw = 1200, vh = 820;
+  let cx = 90, cy = 115, cw = 1020, ch = 500;
+  let isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+  let daysInYear = isLeap ? 366 : 365;
+  let dayW = cw / daysInYear;
+  let latSouth = (lat < 0);
+
+  let phenomena = detectPolarPhenomena(lat, lon, year);
+  let spansPn = phenomena.spansPn;
+  let msDays = phenomena.midnightSunDays;
+  let hasPolarNight = spansPn.length > 0;
+  let hasMidnightSun = msDays.length > 0;
+
+  // Format coordinates
+  let degLat = Math.floor(Math.abs(lat));
+  let minLat = Math.round((Math.abs(lat) - degLat) * 60);
+  let hemLat = lat < 0 ? "S" : "N";
+  let posLat = `${degLat}°${minLat.toString().padStart(2, '0')}′${hemLat}`;
+
+  let degLon = Math.floor(Math.abs(lon));
+  let minLon = Math.round((Math.abs(lon) - degLon) * 60);
+  let hemLon = (lang === "nb") ? (lon < 0 ? "V" : "Ø") : (lon < 0 ? "W" : "E");
+  let posLon = `${degLon}°${minLon.toString().padStart(2, '0')}′${hemLon}`;
+  let posStr = `${posLat}, ${posLon}`;
+
+  // Main and sub title
+  let titleMain = "";
+  if (placeTitle && placeTitle.trim()) {
+    titleMain = `${t.year_in_light} · ${placeTitle.trim().toUpperCase()} ${year}`;
+  } else {
+    titleMain = `${t.year_in_light} · ${posLat} ${year}`;
+  }
+
+  let subDesc = "";
+  if (hasPolarNight && hasMidnightSun) {
+    subDesc = t.sub_all_four.replace("{days}", daysInYear);
+  } else if (hasMidnightSun) {
+    subDesc = t.sub_ms.replace("{days}", daysInYear);
+  } else if (hasPolarNight) {
+    subDesc = t.sub_pn.replace("{days}", daysInYear);
+  } else {
+    subDesc = t.sub_twilight.replace("{days}", daysInYear);
+  }
+  let titleSub = `${posStr} · ${subDesc}`;
+
+  let colors = {
+    'dag': '#fceba4',
+    'borgerlig': '#e07a5f',
+    'nautisk': '#3d5a80',
+    'astronomisk': '#1d2d50',
+    'natt': '#0b132b'
+  };
+
+  let parts = [];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="100%" height="auto" class="poster-svg">`);
+  parts.push(`<title>${titleMain} - CC BY 4.0</title>`);
+  parts.push(`<defs>
+    <style>
+      .bg-card { fill: #070c1a; }
+      .chart-border { fill: none; stroke: #3a4a6b; stroke-width: 1.2; }
+      .grid-line { stroke: #1e2c48; stroke-width: 0.8; stroke-dasharray: 2,4; }
+      .noon-line { stroke: #d4a373; stroke-width: 1.2; stroke-dasharray: 4,4; opacity: 0.85; }
+      .month-line { stroke: #3a4a6b; stroke-width: 0.9; stroke-dasharray: 3,3; }
+      .axis-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; fill: #8a9bb8; }
+      .month-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 12px; font-weight: 600; fill: #cbd5e1; text-anchor: middle; letter-spacing: 1.5px; }
+      .title-main { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Georgia, serif; font-size: 26px; font-weight: 700; fill: #f8fafc; letter-spacing: 3px; }
+      .title-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 13px; fill: #94a3b8; letter-spacing: 1px; }
+      .badge-rect { rx: 4px; ry: 4px; }
+      .anno-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 10.5px; font-weight: 600; }
+      .anno-desc { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 9.5px; }
+      .legend-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; fill: #cbd5e1; }
+      .legend-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 9.5px; fill: #8a9bb8; }
+      .footnote-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 9px; fill: #718096; }
+      .moon-track { stroke: #2a3a5e; stroke-width: 0.8; stroke-dasharray: 2,3; }
+      .moon-marker { cursor: pointer; }
+    </style>
+  </defs>`);
+
+  // Frame
+  parts.push(`<rect width="${vw}" height="${vh}" class="bg-card" rx="10"/>`);
+  parts.push(`<rect x="12" y="12" width="${vw - 24}" height="${vh - 24}" fill="none" stroke="#1a2744" stroke-width="1.5" rx="8"/>`);
+  parts.push(`<text x="${vw / 2}" y="48" text-anchor="middle" class="title-main">${titleMain}</text>`);
+  parts.push(`<text x="${vw / 2}" y="72" text-anchor="middle" class="title-sub">${titleSub}</text>`);
+
+  // Compute daylight bands for all days
+  parts.push('<g id="daylight-bands">');
+  let monthDays = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let curDayIdx = 0;
+  let dstTransitions = [];
+  let prevOff = null;
+
+  for (let m = 1; m <= 12; m++) {
+    let mLen = monthDays[m - 1];
+    for (let d = 1; d <= mLen; d++) {
+      let noonUtc = new Date(Date.UTC(year, m - 1, d, 12, 0, 0) - Math.round(4 * lon * 60000));
+      let off = offsetFn(noonUtc);
+      if (prevOff !== null && off !== prevOff) {
+        dstTransitions.push({ dayIdx: curDayIdx, prev: prevOff, curr: off, month: m, day: d });
+      }
+      prevOff = off;
+
+      // Intervals
+      let intervals = [];
+      let currentBand = null;
+      let startM = 0;
+      for (let min = 0; min < 1440; min += 2) {
+        let minUtcTotal = (min - Math.round(off * 60));
+        let testDate = new Date(Date.UTC(year, m - 1, d, 0, minUtcTotal, 0));
+        let alt = noaaAltitude(testDate, lat, lon);
+        let b = getBand(alt);
+        if (b !== currentBand) {
+          if (currentBand !== null) intervals.push([currentBand, startM, min]);
+          currentBand = b;
+          startM = min;
+        }
+      }
+      intervals.push([currentBand, startM, 1440]);
+
+      let x = cx + curDayIdx * dayW;
+      for (let item of intervals) {
+        let b = item[0], sM = item[1], eM = item[2];
+        let y1 = cy + (sM / 1440.0) * ch;
+        let y2 = cy + (eM / 1440.0) * ch;
+        let h = y2 - y1;
+        let fill = colors[b];
+        parts.push(`<rect x="${x.toFixed(2)}" y="${y1.toFixed(2)}" width="${(dayW + 0.1).toFixed(2)}" height="${h.toFixed(2)}" fill="${fill}"/>`);
+      }
+      curDayIdx++;
+    }
+  }
+  parts.push('</g>');
+
+  // Lunar track and markers
+  let moonTrackY = cy + 16.0;
+  parts.push(`<line x1="${cx}" y1="${moonTrackY.toFixed(1)}" x2="${cx + cw}" y2="${moonTrackY.toFixed(1)}" class="moon-track"/>`);
+  parts.push('<g id="moon-markers">');
+  let moonPhases = computeMoonPhases(year, offsetFn);
+  for (let mp of moonPhases) {
+    let startOfYear = new Date(Date.UTC(year, 0, 1));
+    let dtLoc = mp.date;
+    let dayIdx = Math.floor((dtLoc - startOfYear) / 86400000);
+    let mx = cx + (dayIdx + 0.5) * dayW;
+    let my = moonTrackY;
+    let pLabel = t.phases[mp.name] || mp.name;
+    let sym = renderMoonSymbolSvg(mp.name, 3.8, latSouth);
+    let hStr = dtLoc.getUTCHours().toString().padStart(2, '0');
+    let mStr = dtLoc.getUTCMinutes().toString().padStart(2, '0');
+    parts.push(`<g class="moon-marker" transform="translate(${mx.toFixed(2)}, ${my.toFixed(2)})"><title>${pLabel}: ${dtLoc.getUTCDate()}.${dtLoc.getUTCMonth()+1} ${hStr}:${mStr}</title>${sym}</g>`);
+  }
+  parts.push('</g>');
+
+  // Month divisions
+  let mStartIdx = 0;
+  for (let m = 1; m <= 12; m++) {
+    let mLen = monthDays[m - 1];
+    let mxStart = cx + mStartIdx * dayW;
+    let mxEnd = cx + (mStartIdx + mLen) * dayW;
+    let mxMid = (mxStart + mxEnd) / 2.0;
+    let mLabel = t.months_upper[m];
+    parts.push(`<text x="${mxMid.toFixed(1)}" y="${cy - 12}" class="month-text">${mLabel}</text>`);
+    if (m > 1) {
+      parts.push(`<line x1="${mxStart.toFixed(2)}" y1="${cy}" x2="${mxStart.toFixed(2)}" y2="${cy + ch}" class="month-line"/>`);
+    }
+    mStartIdx += mLen;
+  }
+
+  // Hour Grid
+  let hours = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
+  for (let h of hours) {
+    let y = cy + (h / 24.0) * ch;
+    if (h !== 0 && h !== 24) {
+      if (h === 12) {
+        parts.push(`<line x1="${cx}" y1="${y.toFixed(1)}" x2="${cx + cw}" y2="${y.toFixed(1)}" stroke="#d4a373" stroke-width="0.9" stroke-dasharray="3,3" opacity="0.6"/>`);
+      } else {
+        parts.push(`<line x1="${cx}" y1="${y.toFixed(1)}" x2="${cx + cw}" y2="${y.toFixed(1)}" class="grid-line"/>`);
+      }
+    }
+    let hLabel = `${h.toString().padStart(2, '0')}:00`;
+    parts.push(`<text x="${cx - 10}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="axis-text">${hLabel}</text>`);
+    parts.push(`<text x="${cx + cw + 10}" y="${(y + 4).toFixed(1)}" text-anchor="start" class="axis-text">${hLabel}</text>`);
+  }
+
+  // Chart Frame Border
+  parts.push(`<rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" class="chart-border"/>`);
+
+  // Solar Noon Curve
+  let noonPts = [];
+  let dCount = 0;
+  for (let m = 1; m <= 12; m++) {
+    let mLen = monthDays[m - 1];
+    for (let d = 1; d <= mLen; d++) {
+      let noonUtc = new Date(Date.UTC(year, m - 1, d, 12, 0, 0) - Math.round(4 * lon * 60000));
+      let curJd = jdFromYMDHMS(year, m, d, noonUtc.getUTCHours(), noonUtc.getUTCMinutes(), noonUtc.getUTCSeconds());
+      let res = sunDeclEqtime(curJd);
+      let off = offsetFn(noonUtc);
+      let noonLocalMin = 720 - 4 * lon - res.eqt + off * 60;
+      let nx = cx + (dCount + 0.5) * dayW;
+      let ny = cy + (noonLocalMin / 1440.0) * ch;
+      noonPts.push(`${nx.toFixed(1)},${ny.toFixed(1)}`);
+      dCount++;
+    }
+  }
+  parts.push(`<polyline points="${noonPts.join(' ')}" class="noon-line" fill="none"/>`);
+
+  // Solstices & Equinoxes
+  let solstices = [
+    { m: 3, d: 20, lbl: latSouth ? t.solstice_spring_south : t.solstice_spring },
+    { m: 6, d: 21, lbl: latSouth ? t.solstice_summer_south : t.solstice_summer },
+    { m: 9, d: 23, lbl: latSouth ? t.solstice_autumn_south : t.solstice_autumn },
+    { m: 12, d: 22, lbl: latSouth ? t.solstice_winter_south : t.solstice_winter }
+  ];
+  for (let sol of solstices) {
+    let dayOfYear = 0;
+    for (let mi = 0; mi < sol.m - 1; mi++) dayOfYear += monthDays[mi];
+    dayOfYear += (sol.d - 1);
+    let sx = cx + dayOfYear * dayW;
+    let sTxt = sol.lbl.replace("{day}", sol.d);
+    parts.push(`<line x1="${sx.toFixed(1)}" y1="${cy + ch - 15}" x2="${sx.toFixed(1)}" y2="${cy + ch}" stroke="#cbd5e1" stroke-width="0.8"/>`);
+    parts.push(`<text x="${sx.toFixed(1)}" y="${cy + ch - 18}" text-anchor="middle" fill="#94a3b8" font-size="8.5px" font-family="sans-serif">${sTxt}</text>`);
+  }
+
+  // Polar phenomena badges
+  if (hasPolarNight && spansPn.length > 0) {
+    let sp1 = spansPn[0];
+    if (sp1[0].month === 1 && sp1[0].day === 1) {
+      let retM = sp1[sp1.length - 1].month;
+      let retD = sp1[sp1.length - 1].day + 1;
+      let retDayOfYear = 0;
+      for (let mi = 0; mi < retM - 1; mi++) retDayOfYear += monthDays[mi];
+      retDayOfYear += (retD - 1);
+      let retX = cx + retDayOfYear * dayW;
+      let retRise = eventUtc(year, retM, retD, lat, lon, 90.0 - (-0.833), true);
+      let riseTime = "--:--";
+      if (retRise) {
+        let off = offsetFn(retRise);
+        let retLoc = new Date(retRise.getTime() + off * 3600000);
+        riseTime = `${retLoc.getUTCHours().toString().padStart(2, '0')}:${retLoc.getUTCMinutes().toString().padStart(2, '0')}`;
+      }
+      let mUp = t.months_short_upper[retM];
+      let tRet = t.sun_returns_title.replace("{day}", retD).replace("{month}", mUp);
+      let dRet = t.sun_returns_desc.replace("{time}", riseTime);
+      parts.push(`<g transform="translate(${retX.toFixed(1)}, ${cy + 360})">
+        <line x1="0" y1="-100" x2="0" y2="0" stroke="#fceba4" stroke-width="1" stroke-dasharray="2,2"/>
+        <rect x="5" y="-115" width="185" height="42" fill="#0c152a" stroke="#d4a373" stroke-width="1" class="badge-rect"/>
+        <text x="12" y="-99" fill="#fceba4" class="anno-title">${tRet}</text>
+        <text x="12" y="-85" fill="#cbd5e1" class="anno-desc">${dRet}</text>
+      </g>`);
+    }
+  }
+
+  if (hasMidnightSun && msDays.length > 0) {
+    // In the south the midnight sun runs over New Year: it is then one season,
+    // from its start in the autumn of the calendar to its end early in the year
+    // (2026-10-18: it was labelled "1 January - 31 December").
+    let idx = (d) => { let n = 0; for (let mi = 0; mi < d.month - 1; mi++) n += monthDays[mi]; return n + d.day - 1; };
+    let msSpans = [[msDays[0]]];
+    for (let i = 1; i < msDays.length; i++) {
+      if (idx(msDays[i]) === idx(msDays[i - 1]) + 1) msSpans[msSpans.length - 1].push(msDays[i]);
+      else msSpans.push([msDays[i]]);
+    }
+    let first = msSpans[0], last = msSpans[msSpans.length - 1];
+    let wraps = msSpans.length > 1 && idx(first[0]) === 0 && idx(last[last.length - 1]) === daysInYear - 1;
+    let d1 = wraps ? last[0] : msDays[0];
+    let d2 = wraps ? first[first.length - 1] : msDays[msDays.length - 1];
+    let dayIdx1 = idx(d1), dayIdx2 = idx(d2);
+    let msX1 = cx + dayIdx1 * dayW;
+    let msX2 = cx + dayIdx2 * dayW;
+    let msXMid = (msX1 + msX2) / 2.0;
+    if (wraps) {
+      let big = first.length >= last.length ? first : last;
+      msXMid = cx + ((idx(big[0]) + idx(big[big.length - 1])) / 2.0) * dayW;
+    }
+    msXMid = Math.min(Math.max(msXMid, cx + 140), cx + cw - 140);
+    let tMs = t.midnight_sun_title.replace("{days}", msDays.length);
+    let dMs = t.midnight_sun_desc.replace("{d1}", d1.day).replace("{m1}", t.months_lower[d1.month]).replace("{d2}", d2.day).replace("{m2}", t.months_lower[d2.month]);
+    parts.push(`<g transform="translate(${msXMid.toFixed(1)}, ${cy + 45})">
+      <rect x="-135" y="0" width="270" height="42" fill="#0c152a" stroke="#fceba4" stroke-width="1.2" class="badge-rect"/>
+      <text x="0" y="17" fill="#fceba4" text-anchor="middle" class="anno-title">${tMs}</text>
+      <text x="0" y="32" fill="#e2e8f0" text-anchor="middle" class="anno-desc">${dMs}</text>
+    </g>
+    <line x1="${msX1.toFixed(1)}" y1="${cy}" x2="${msX1.toFixed(1)}" y2="${cy + 100}" stroke="#fceba4" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="${msX2.toFixed(1)}" y1="${cy}" x2="${msX2.toFixed(1)}" y2="${cy + 100}" stroke="#fceba4" stroke-width="1" stroke-dasharray="2,2"/>`);
+  }
+
+  // Twilight Legend Block
+  let legY = cy + ch + 22;
+  let swatchW = 24, swatchH = 14, spacing = 195;
+  let legStartX = cx + 15;
+  for (let i = 0; i < t.legend.length; i++) {
+    let item = t.legend[i];
+    let key = item[0], label = item[1], desc = item[2];
+    let lx = legStartX + i * spacing;
+    let fill = colors[key];
+    parts.push(`<rect x="${lx}" y="${legY}" width="${swatchW}" height="${swatchH}" fill="${fill}" rx="2" stroke="#475569" stroke-width="0.6"/>`);
+    parts.push(`<text x="${lx + swatchW + 8}" y="${legY + 11}" class="legend-text">${label}</text>`);
+    parts.push(`<text x="${lx + swatchW + 8}" y="${legY + 24}" class="legend-sub">${desc}</text>`);
+  }
+
+  // Moon Phase Legend Block
+  let legMY = legY + 36;
+  parts.push(`<text x="${legStartX}" y="${legMY + 4}" class="legend-text" font-weight="600">${t.moon_phases_label}</text>`);
+  let moonLegendItems = [
+    ["new", t.phases["new"], legStartX + 95],
+    ["first_quarter", t.phases["first_quarter"], legStartX + 235],
+    ["full", t.phases["full"], legStartX + 410],
+    ["third_quarter", t.phases["third_quarter"], legStartX + 555]
+  ];
+  for (let item of moonLegendItems) {
+    let pKey = item[0], pLabel = item[1], px = item[2];
+    let sym = renderMoonSymbolSvg(pKey, 4.2, latSouth);
+    parts.push(`<g transform="translate(${px}, ${legMY})">${sym}</g>`);
+    parts.push(`<text x="${px + 12}" y="${legMY + 4}" class="legend-text">${pLabel}</text>`);
+  }
+  let moonSub = t.moon_phases_sub.replace("{count}", moonPhases.length).replace("{year}", year).replace("{tz}", tzName);
+  parts.push(`<text x="${legStartX + 710}" y="${legMY + 4}" class="legend-sub">${moonSub}</text>`);
+
+  // Footnote lines (Caveats, AI disclosure, CC BY 4.0 & GeoNames licence)
+  let nY1 = legMY + 24;
+  let nY2 = nY1 + 16;
+  let nY3 = nY2 + 16;
+  let nY4 = nY3 + 16;
+
+  let caveat = t.caveat;
+  let edgeTxt = (hasPolarNight || hasMidnightSun) ? t.edge_uncertainty : t.white_nights;
+  let aiText = t.ai_mark;
+  let licTxt = t.licence_footer.replace("{pos}", posStr).replace("{tz}", tzName) + " GeoNames (CC BY 4.0).";
+
+  parts.push(`<text x="${cx}" y="${nY1}" class="footnote-text">${caveat}</text>`);
+  parts.push(`<text x="${cx}" y="${nY2}" class="footnote-text">${edgeTxt}</text>`);
+  parts.push(`<text x="${cx}" y="${nY3}" class="footnote-text" fill="#94a3b8" font-weight="600">${aiText}</text>`);
+  parts.push(`<text x="${cx}" y="${nY4}" class="footnote-text">${licTxt}</text>`);
+
+  parts.push('</svg>');
+  return parts.join('\n');
+}
+
+
+/* ABOUT TEXTS: the section under the poster, in the chosen language (Carl, 2026-10-18) */
+const ABOUT_TEXTS = {
+ "nb": {
+  "badge": "Laget av et KI-system (Arrodi, arrodi.pages.dev). Et menneske er ansvarlig og leser svar.",
+  "h2": "Om generatoren",
+  "intro": "Generatoren lager en trykkeklar årsplakat over dagslys, skumring (borgerlig, nautisk og astronomisk), natt, månefaser, solverv og jevndøgn for et hvilket som helst sted på jorden og et hvilket som helst år. Der det er midnattssol eller mørketid, viser plakaten det.",
+  "h3a": "Laget av KI, åpent",
+  "pa": "Laget av et KI-system (Arrodi, <a href=\"https://arrodi.pages.dev\" style=\"color:#93c5fd;\">arrodi.pages.dev</a>). Alt regnes ut lokalt i nettleseren din, uten oppslag mot andre servere, uten sporing og uten skrifter eller skript utenfra. Hver plakat, på skjermen, som PDF og som PNG, sier at den er laget av KI.",
+  "h3d": "Data og lisens",
+  "li": [
+   "<strong>Steder:</strong> utdrag fra <a href=\"https://www.geonames.org/\" style=\"color:#93c5fd;\">GeoNames</a>, <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">CC BY 4.0</a>.",
+   "<strong>Sol og skumring:</strong> NOAAs solberegninger (Jean Meeus, <em>Astronomical Algorithms</em>).",
+   "<strong>Månefaser:</strong> Jean Meeus, <em>Astronomical Algorithms</em>, kapittel 49.",
+   "<strong>Plakatene:</strong> <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">Creative Commons Navngivelse 4.0 Internasjonal (CC BY 4.0)</a>, kreditert «Arrodi, arrodi.pages.dev»."
+  ],
+  "h3c": "Hvor nøyaktig",
+  "pc": "Tidene for sol og skumring regnes med de samme NOAA/Meeus-formlene som en kontrollert Python-versjon, og stemmer med den innen ett minutt."
+ },
+ "en": {
+  "badge": "Written by an AI system (Arrodi, arrodi.pages.dev). A human is responsible for it and reads replies.",
+  "h2": "About this generator",
+  "intro": "The generator makes a print-ready poster of a whole year of daylight, twilight (civil, nautical and astronomical), night, moon phases, solstices and equinoxes for any place on Earth and any year. Where there is midnight sun or polar night, the poster shows it.",
+  "h3a": "Made by AI, in the open",
+  "pa": "Made by an AI system (Arrodi, <a href=\"https://arrodi.pages.dev\" style=\"color:#93c5fd;\">arrodi.pages.dev</a>). Everything is calculated locally in your browser, with no calls to other servers, no tracking and no fonts or scripts from elsewhere. Every poster, on screen, as PDF and as PNG, says it was made by AI.",
+  "h3d": "Data and licence",
+  "li": [
+   "<strong>Places:</strong> an extract from <a href=\"https://www.geonames.org/\" style=\"color:#93c5fd;\">GeoNames</a>, <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">CC BY 4.0</a>.",
+   "<strong>Sun and twilight:</strong> NOAA's solar algorithms (Jean Meeus, <em>Astronomical Algorithms</em>).",
+   "<strong>Moon phases:</strong> Jean Meeus, <em>Astronomical Algorithms</em>, chapter 49.",
+   "<strong>The posters:</strong> <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>, credited “Arrodi, arrodi.pages.dev”."
+  ],
+  "h3c": "How accurate",
+  "pc": "Sun and twilight times use the same NOAA/Meeus equations as a verified Python version and agree with it within one minute."
+ },
+ "sv": {
+  "badge": "Skapad av ett AI-system (Arrodi, arrodi.pages.dev). En människa ansvarar och läser svar.",
+  "h2": "Om generatorn",
+  "intro": "Generatorn gör en tryckfärdig årsaffisch över dagsljus, skymning (borgerlig, nautisk och astronomisk), natt, månfaser, solstånd och dagjämningar för vilken plats som helst på jorden och vilket år som helst. Där det är midnattssol eller polarnatt visar affischen det.",
+  "h3a": "Skapad av AI, öppet",
+  "pa": "Skapad av ett AI-system (Arrodi, <a href=\"https://arrodi.pages.dev\" style=\"color:#93c5fd;\">arrodi.pages.dev</a>). Allt räknas ut lokalt i din webbläsare, utan anrop till andra servrar, utan spårning och utan typsnitt eller skript utifrån. Varje affisch, på skärmen, som PDF och som PNG, säger att den är gjord av AI.",
+  "h3d": "Data och licens",
+  "li": [
+   "<strong>Platser:</strong> utdrag ur <a href=\"https://www.geonames.org/\" style=\"color:#93c5fd;\">GeoNames</a>, <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">CC BY 4.0</a>.",
+   "<strong>Sol och skymning:</strong> NOAA:s solberäkningar (Jean Meeus, <em>Astronomical Algorithms</em>).",
+   "<strong>Månfaser:</strong> Jean Meeus, <em>Astronomical Algorithms</em>, kapitel 49.",
+   "<strong>Affischerna:</strong> <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">Creative Commons Erkännande 4.0 Internationell (CC BY 4.0)</a>, med erkännande ”Arrodi, arrodi.pages.dev”."
+  ],
+  "h3c": "Hur noggrant",
+  "pc": "Tiderna för sol och skymning räknas med samma NOAA/Meeus-formler som en kontrollerad Python-version och stämmer med den inom en minut."
+ },
+ "da": {
+  "badge": "Lavet af et AI-system (Arrodi, arrodi.pages.dev). Et menneske har ansvaret og læser svar.",
+  "h2": "Om generatoren",
+  "intro": "Generatoren laver en trykklar årsplakat over dagslys, tusmørke (borgerligt, nautisk og astronomisk), nat, månefaser, solhverv og jævndøgn for et hvilket som helst sted på jorden og et hvilket som helst år. Hvor der er midnatssol eller polarnat, viser plakaten det.",
+  "h3a": "Lavet af AI, åbent",
+  "pa": "Lavet af et AI-system (Arrodi, <a href=\"https://arrodi.pages.dev\" style=\"color:#93c5fd;\">arrodi.pages.dev</a>). Alt beregnes lokalt i din browser, uden opslag på andre servere, uden sporing og uden skrifttyper eller scripts udefra. Hver plakat, på skærmen, som PDF og som PNG, siger, at den er lavet af AI.",
+  "h3d": "Data og licens",
+  "li": [
+   "<strong>Steder:</strong> uddrag fra <a href=\"https://www.geonames.org/\" style=\"color:#93c5fd;\">GeoNames</a>, <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">CC BY 4.0</a>.",
+   "<strong>Sol og tusmørke:</strong> NOAA's solberegninger (Jean Meeus, <em>Astronomical Algorithms</em>).",
+   "<strong>Månefaser:</strong> Jean Meeus, <em>Astronomical Algorithms</em>, kapitel 49.",
+   "<strong>Plakaterne:</strong> <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">Creative Commons Kreditering 4.0 International (CC BY 4.0)</a>, krediteret »Arrodi, arrodi.pages.dev«."
+  ],
+  "h3c": "Hvor præcist",
+  "pc": "Tiderne for sol og tusmørke beregnes med de samme NOAA/Meeus-formler som en kontrolleret Python-version og stemmer med den inden for ét minut."
+ },
+ "de": {
+  "badge": "Erstellt von einem KI-System (Arrodi, arrodi.pages.dev). Ein Mensch ist verantwortlich und liest Antworten.",
+  "h2": "Über den Generator",
+  "intro": "Der Generator erstellt ein druckfertiges Jahresposter mit Tageslicht, Dämmerung (bürgerlich, nautisch und astronomisch), Nacht, Mondphasen, Sonnenwenden und Tagundnachtgleichen für jeden Ort der Erde und jedes Jahr. Wo es Mitternachtssonne oder Polarnacht gibt, zeigt das Poster sie.",
+  "h3a": "Von KI erstellt, offen",
+  "pa": "Erstellt von einem KI-System (Arrodi, <a href=\"https://arrodi.pages.dev\" style=\"color:#93c5fd;\">arrodi.pages.dev</a>). Alles wird lokal in Ihrem Browser berechnet, ohne Anfragen an andere Server, ohne Tracking und ohne Schriften oder Skripte von außen. Jedes Poster, auf dem Bildschirm, als PDF und als PNG, sagt, dass es von KI erstellt wurde.",
+  "h3d": "Daten und Lizenz",
+  "li": [
+   "<strong>Orte:</strong> Auszug aus <a href=\"https://www.geonames.org/\" style=\"color:#93c5fd;\">GeoNames</a>, <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">CC BY 4.0</a>.",
+   "<strong>Sonne und Dämmerung:</strong> die Sonnenalgorithmen der NOAA (Jean Meeus, <em>Astronomical Algorithms</em>).",
+   "<strong>Mondphasen:</strong> Jean Meeus, <em>Astronomical Algorithms</em>, Kapitel 49.",
+   "<strong>Die Poster:</strong> <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">Creative Commons Namensnennung 4.0 International (CC BY 4.0)</a>, Nennung „Arrodi, arrodi.pages.dev“."
+  ],
+  "h3c": "Wie genau",
+  "pc": "Die Zeiten für Sonne und Dämmerung werden mit denselben NOAA/Meeus-Formeln berechnet wie eine geprüfte Python-Version und stimmen mit ihr auf eine Minute überein."
+ },
+ "es": {
+  "badge": "Creado por un sistema de IA (Arrodi, arrodi.pages.dev). Una persona es responsable y lee las respuestas.",
+  "h2": "Sobre el generador",
+  "intro": "El generador crea un póster listo para imprimir con la luz del día, el crepúsculo (civil, náutico y astronómico), la noche, las fases de la luna, los solsticios y los equinoccios de cualquier lugar de la Tierra y de cualquier año. Donde hay sol de medianoche o noche polar, el póster lo muestra.",
+  "h3a": "Hecho por IA, de forma abierta",
+  "pa": "Hecho por un sistema de IA (Arrodi, <a href=\"https://arrodi.pages.dev\" style=\"color:#93c5fd;\">arrodi.pages.dev</a>). Todo se calcula en tu navegador, sin consultas a otros servidores, sin rastreo y sin fuentes ni scripts externos. Cada póster, en pantalla, en PDF y en PNG, indica que lo ha hecho una IA.",
+  "h3d": "Datos y licencia",
+  "li": [
+   "<strong>Lugares:</strong> extracto de <a href=\"https://www.geonames.org/\" style=\"color:#93c5fd;\">GeoNames</a>, <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">CC BY 4.0</a>.",
+   "<strong>Sol y crepúsculo:</strong> los algoritmos solares de la NOAA (Jean Meeus, <em>Astronomical Algorithms</em>).",
+   "<strong>Fases de la luna:</strong> Jean Meeus, <em>Astronomical Algorithms</em>, capítulo 49.",
+   "<strong>Los pósteres:</strong> <a href=\"https://creativecommons.org/licenses/by/4.0/\" style=\"color:#93c5fd;\">Creative Commons Atribución 4.0 Internacional (CC BY 4.0)</a>, citando «Arrodi, arrodi.pages.dev»."
+  ],
+  "h3c": "Qué precisión tiene",
+  "pc": "Las horas del sol y del crepúsculo se calculan con las mismas fórmulas de NOAA/Meeus que una versión en Python verificada y coinciden con ella con un margen de un minuto."
+ }
+};
+
+function renderAbout() {
+  if (typeof document === 'undefined') return;
+  let el = document.getElementById('meta-section');
+  if (!el) return;
+  let a = ABOUT_TEXTS[currentLang] || ABOUT_TEXTS['nb'];
+  el.setAttribute('lang', currentLang);
+  el.innerHTML = `<div class="badge-ai">${a.badge}</div><h2>${a.h2}</h2><p>${a.intro}</p>`
+    + `<h3>${a.h3a}</h3><p>${a.pa}</p><h3>${a.h3d}</h3><ul>${a.li.map(x => `<li>${x}</li>`).join('')}</ul>`
+    + `<h3>${a.h3c}</h3><p>${a.pc}</p>`;
+}
+
+/* APP STATE & EVENT HANDLING */
+
+let currentPlaceName = "Tromsø";
+let currentLat = 69.65;
+let currentLon = 18.96;
+let currentYear = 2027;
+let currentTz = "Europe/Oslo";
+let currentLang = "nb";
+
+function updateUiLanguage() {
+  if (typeof document === 'undefined') return;
+  let ui = UI_TEXTS[currentLang] || UI_TEXTS["nb"];
+  let elTitle = document.getElementById("page-title");
+  if (elTitle) elTitle.innerText = ui.title;
+  let elSub = document.getElementById("page-subtitle");
+  if (elSub) elSub.innerText = ui.sub;
+  let elPlace = document.getElementById("lbl-place");
+  if (elPlace) elPlace.innerText = ui.lblPlace;
+  let elLat = document.getElementById("lbl-lat");
+  if (elLat) elLat.innerText = ui.lblLat;
+  let elLon = document.getElementById("lbl-lon");
+  if (elLon) elLon.innerText = ui.lblLon;
+  let elYear = document.getElementById("lbl-year");
+  if (elYear) elYear.innerText = ui.lblYear;
+  let elTz = document.getElementById("lbl-tz");
+  if (elTz) elTz.innerText = ui.lblTz;
+  let elLang = document.getElementById("lbl-lang");
+  if (elLang) elLang.innerText = ui.lblLang;
+  let elPrint = document.getElementById("txt-print");
+  if (elPrint) elPrint.innerText = ui.txtPrint;
+  let elPng = document.getElementById("txt-png");
+  if (elPng) elPng.innerText = ui.txtPng;
+  document.documentElement.lang = currentLang;
+  renderAbout();
+}
+
+function renderPoster() {
+  updateUiLanguage();
+  let offsetObj = makeOffsetFn(currentTz, currentLon);
+  let svgCode = buildSvgPoster(currentLat, currentLon, currentYear, currentLang, currentPlaceName, offsetObj.name, offsetObj.fn);
+  if (typeof document !== 'undefined') {
+    let posterBox = document.getElementById("poster-box");
+    if (posterBox) posterBox.innerHTML = svgCode;
+    let statusInd = document.getElementById("status-indicator");
+    if (statusInd) {
+      statusInd.innerText = `${currentPlaceName || (currentLat.toFixed(2) + '°')} ${currentYear} (${offsetObj.name}) · [${currentLang.toUpperCase()}]`;
+    }
+  }
+  return svgCode;
+}
+
+function downloadPng() {
+  if (typeof document === 'undefined') return;
+  let svgElem = document.querySelector('#poster-box svg');
+  if (!svgElem) return;
+  let svgStr = new XMLSerializer().serializeToString(svgElem);
+  let svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  let URL = window.URL || window.webkitURL || window;
+  let blobURL = URL.createObjectURL(svgBlob);
+
+  let img = new Image();
+  img.onload = function() {
+    let canvas = document.getElementById('export-canvas');
+    let scale = 2; // high-resolution export
+    canvas.width = 1200 * scale;
+    canvas.height = 820 * scale;
+    let ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#070c1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(blobURL);
+
+    let cleanPlace = (currentPlaceName || 'plakat').toLowerCase()
+      .replace(/æ/g, 'ae').replace(/ø/g, 'o').replace(/å/g, 'a')
+      .replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/é/g, 'e')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    let filename = `${cleanPlace}-${currentYear}-${currentLang}.png`;
+
+    if (canvas.toBlob) {
+      canvas.toBlob(function(pngBlob) {
+        let pngURL = URL.createObjectURL(pngBlob);
+        let a = document.createElement('a');
+        a.download = filename;
+        a.href = pngURL;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(pngURL);
+      }, 'image/png');
+    } else {
+      let dataUrl = canvas.toDataURL('image/png');
+      let a = document.createElement('a');
+      a.download = filename;
+      a.href = dataUrl;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+  img.src = blobURL;
+}
+
+/* AUTOCOMPLETE LOGIC */
+
+if (typeof document !== 'undefined') {
+  const inputPlace = document.getElementById("input-place");
+  const autoBox = document.getElementById("autocomplete-box");
+
+  if (inputPlace && autoBox) {
+    inputPlace.addEventListener("input", function() {
+      let query = inputPlace.value.trim().toLowerCase();
+      if (query.length < 2) {
+        autoBox.style.display = "none";
+        autoBox.innerHTML = "";
+        return;
+      }
+      let matches = [];
+      for (let c of CITIES) {
+        let name = c[0];
+        if (name.toLowerCase().includes(query)) {
+          matches.push(c);
+          if (matches.length >= 25) break;
+        }
+      }
+      if (matches.length === 0) {
+        autoBox.style.display = "none";
+        return;
+      }
+      autoBox.innerHTML = "";
+      for (let item of matches) {
+        let div = document.createElement("div");
+        div.className = "autocomplete-item";
+        div.innerText = `${item[0]} (${item[1]}) · ${item[2]}°, ${item[3]}°`;
+        div.addEventListener("click", function() {
+          inputPlace.value = item[0];
+          currentPlaceName = item[0];
+          currentLat = item[2];
+          currentLon = item[3];
+          currentTz = item[4];
+          let elLat = document.getElementById("input-lat");
+          if (elLat) elLat.value = item[2];
+          let elLon = document.getElementById("input-lon");
+          if (elLon) elLon.value = item[3];
+          let elTz = document.getElementById("input-tz");
+          if (elTz) elTz.value = item[4];
+          autoBox.style.display = "none";
+          renderPoster();
+        });
+        autoBox.appendChild(div);
+      }
+      autoBox.style.display = "block";
+    });
+
+    document.addEventListener("click", function(e) {
+      if (!inputPlace.contains(e.target) && !autoBox.contains(e.target)) {
+        autoBox.style.display = "none";
+      }
+    });
+  }
+
+  let elLat = document.getElementById("input-lat");
+  if (elLat) {
+    elLat.addEventListener("change", function(e) {
+      let v = parseFloat(e.target.value);
+      if (!isNaN(v) && v >= -90.0 && v <= 90.0) {
+        currentLat = v;
+        currentPlaceName = "";
+        let elPl = document.getElementById("input-place");
+        if (elPl) elPl.value = "";
+        renderPoster();
+      }
+    });
+  }
+
+  let elLon = document.getElementById("input-lon");
+  if (elLon) {
+    elLon.addEventListener("change", function(e) {
+      let v = parseFloat(e.target.value);
+      if (!isNaN(v) && v >= -180.0 && v <= 180.0) {
+        currentLon = v;
+        currentPlaceName = "";
+        let elPl = document.getElementById("input-place");
+        if (elPl) elPl.value = "";
+        renderPoster();
+      }
+    });
+  }
+
+  let elYear = document.getElementById("input-year");
+  if (elYear) {
+    elYear.addEventListener("change", function(e) {
+      let v = parseInt(e.target.value, 10);
+      if (!isNaN(v) && v >= 1900 && v <= 2100) {
+        currentYear = v;
+        renderPoster();
+      }
+    });
+  }
+
+  let elTz = document.getElementById("input-tz");
+  if (elTz) {
+    elTz.addEventListener("change", function(e) {
+      currentTz = e.target.value.trim();
+      renderPoster();
+    });
+  }
+
+  let elLang = document.getElementById("input-lang");
+  if (elLang) {
+    elLang.addEventListener("change", function(e) {
+      currentLang = e.target.value;
+      renderPoster();
+    });
+  }
+
+  // Initialize on page load
+  if (typeof window !== 'undefined') {
+    window.addEventListener("DOMContentLoaded", function() {
+      if (inputPlace) inputPlace.value = "Tromsø";
+      renderPoster();
+    });
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vedkalkulatoren — Sammenlign pris på vedfyring og strøm</title>
+  <meta name="description" content="Klientside varmekostkalkulator for norske husholdninger. Sammenlign reell kilowattimepris på ved mot spotpris, strømstøtte og nettleie.">
+  <meta property="og:title" content="Vedkalkulatoren — Sammenlign pris på vedfyring og strøm">
+  <meta property="og:description" content="Reell kilowattimepris for vedfyring mot spotpris, strømstøtte og nettleie. Nullsporing, klientside og åpen kildekode.">
+  <meta property="og:image" content="https://arrodi.pages.dev/vedkalkulator/omslag.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="1600">
+  <meta property="og:image:alt" content="Vedkalkulatoren: omslag med vedstabel, reintbrennende ovn, kraftlinje og kilowattimebalanse i flat vektorstil på skoggrønn bunn, ny versjon som erstatter b857a456f0a4 med «bilde» i stedet for «bilete»">
+  <meta property="og:url" content="https://arrodi.pages.dev/vedkalkulator/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vedkalkulatoren — Sammenlign pris på vedfyring og strøm">
+  <meta name="twitter:description" content="Reell kilowattimepris for vedfyring mot spotpris, strømstøtte og nettleie.">
+  <meta name="twitter:image" content="https://arrodi.pages.dev/vedkalkulator/omslag.png">
+  <meta name="twitter:image:alt" content="Vedkalkulatoren: omslag med vedstabel, reintbrennende ovn, kraftlinje og kilowattimebalanse i flat vektorstil på skoggrønn bunn, ny versjon som erstatter b857a456f0a4 med «bilde» i stedet for «bilete»">
+  <!-- Copyright (c) 2026 Arrodi (arrodi.pages.dev). MIT License. -->
+  <!-- Written by an AI system. A human is responsible for it and reads replies. -->
+  <style>
+    :root {
+      --color-bg: #fafaf9;
+      --color-surface: #ffffff;
+      --color-surface-soft: #f4f3f0;
+      --color-ink: #141414;
+      --color-muted: #5c5a56;
+      --color-border: #e2dfd9;
+      --color-dawn-red: #e2552b;
+      --color-sun: #f2a65a;
+      --color-night-blue: #1e3a5c;
+      --color-forest: #2f4a3a;
+      --color-gold: #f2c14e;
+      --radius: 8px;
+      --shadow-sm: 0 1px 3px rgba(20, 20, 20, 0.05);
+      --shadow-md: 0 4px 12px rgba(20, 20, 20, 0.08);
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      color: var(--color-ink);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding: 1.5rem 1rem 4rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 2px solid var(--color-forest);
+      padding-bottom: 1.25rem;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.5rem;
+      background: var(--color-surface-soft);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      color: var(--color-forest);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      line-height: 1.2;
+      color: var(--color-night-blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .lead {
+      font-size: 1.1rem;
+      color: var(--color-muted);
+      max-width: 720px;
+    }
+
+    .calculator-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .calculator-layout {
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+    }
+
+    .panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1.25rem;
+      color: var(--color-night-blue);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: var(--color-ink);
+    }
+
+    .label-desc {
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      font-weight: normal;
+      margin-top: 0.15rem;
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      font-size: 1rem;
+      background-color: #fff;
+      color: var(--color-ink);
+      font-family: inherit;
+    }
+
+    input[type="number"] {
+      padding: 0.6rem 0.75rem;
+    }
+
+    select {
+      padding: 0.6rem 2.25rem 0.6rem 0.75rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    input[type="number"]:focus,
+    select:focus {
+      outline: 2px solid var(--color-forest);
+      outline-offset: -1px;
+      border-color: var(--color-forest);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .input-unit {
+      font-size: 0.9rem;
+      color: var(--color-muted);
+      white-space: nowrap;
+    }
+
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .range-wrap input[type="range"] {
+      flex: 1;
+    }
+
+    .range-val {
+      font-weight: bold;
+      min-width: 3.5rem;
+      text-align: right;
+    }
+
+    .sub-panel {
+      background: var(--color-surface-soft);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .radio-option input {
+      margin-top: 0.2rem;
+    }
+
+    .note-box {
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      background: #fff;
+      border-left: 3px solid var(--color-gold);
+      padding: 0.5rem 0.75rem;
+      margin-top: 0.5rem;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .checkbox-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    /* Resultatfelt */
+    .result-card {
+      background: #ffffff;
+      border: 2px solid var(--color-forest);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 1rem;
+    }
+
+    .result-verdict {
+      padding: 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      line-height: 1.4;
+      margin-bottom: 1.5rem;
+    }
+
+    .verdict-wood-expensive {
+      background: #fdf3f0;
+      border: 1px solid #f6c8be;
+      color: #8c2a11;
+    }
+
+    .verdict-wood-cheap {
+      background: #f0f7f3;
+      border: 1px solid #c2e2cf;
+      color: #1a4f32;
+    }
+
+    .verdict-equal {
+      background: #fcf9ee;
+      border: 1px solid #fae69e;
+      color: #614d05;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-box {
+      padding: 0.75rem;
+      background: var(--color-surface-soft);
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--color-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-ink);
+    }
+
+    .metric-sub {
+      font-size: 0.75rem;
+      color: var(--color-muted);
+    }
+
+    .breakeven-banner {
+      background: var(--color-surface-soft);
+      border: 1px dashed var(--color-forest);
+      border-radius: 6px;
+      padding: 1rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .breakeven-title {
+      font-size: 0.85rem;
+      color: var(--color-forest);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .breakeven-num {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--color-ink);
+      margin: 0.2rem 0;
+    }
+
+    .breakeven-desc {
+      font-size: 0.85rem;
+      color: var(--color-muted);
+    }
+
+    details {
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--color-border);
+      padding-top: 1rem;
+    }
+
+    summary {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-night-blue);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .detail-table {
+      width: 100%;
+      margin-top: 0.75rem;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .detail-table td {
+      padding: 0.35rem 0;
+      border-bottom: 1px solid #f0ede6;
+    }
+
+    .detail-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+    }
+
+    /* Kjelder og fotnote */
+    footer {
+      margin-top: 3rem;
+      border-top: 1px solid var(--color-border);
+      padding-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--color-muted);
+    }
+
+    .kjelder-seksjon {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .kjelder-seksjon h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      color: var(--color-night-blue);
+    }
+
+    .kjelder-seksjon ul {
+      padding-left: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .kjelder-seksjon li {
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .kjelder-seksjon a {
+      color: var(--color-night-blue);
+      text-decoration: underline;
+    }
+
+    .lang-en-section {
+      margin-top: 2rem;
+      background: #fdfdfc;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .meta-notice {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      border-top: 1px solid var(--color-border);
+      padding-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="badge">Nullsporing · Klientside · Ingen reklame</span>
+    <h1>Vedkalkulatoren</h1>
+    <p class="lead">
+      Finn den reelle oppvarmingskostnaden per kilowattime varme fra ved sammenlignet med strøm.
+      Kalkulatoren tar hensyn til treslag, fuktinnhold, pakketetthet, ovnstype og nettleie.
+    </p>
+  </header>
+
+  <main class="calculator-layout">
+    <!-- Venstre spalte: Inndata -->
+    <div class="panel">
+      <h2>1. Ved og ildsted</h2>
+
+      <div class="form-group">
+        <label for="input-treslag">Treslag</label>
+        <select id="input-treslag">
+          <option value="bjork" selected>Bjørk</option>
+          <option value="gran">Gran</option>
+          <option value="furu">Furu</option>
+          <option value="eik">Eik</option>
+          <option value="osp">Osp</option>
+        </select>
+        <div class="label-desc" id="desc-treslag">Bjørk: 500 kg tørrstoff/m³, 5,28 kWh/kg. Bestemmer basisdensitet og brennverdi.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="input-fukt">Fuktinnhold (vektprosent på våt basis)</label>
+        <div class="range-wrap">
+          <input type="range" id="input-fukt" min="10" max="35" value="18" step="1">
+          <span class="range-val" id="val-fukt">18 %</span>
+        </div>
+        <div class="label-desc">Standard for tørr fyringsved (NS 4414) er maks 20 %. Råere ved bruker energi på å fordampe vann (0,68 kWh per kg vann).</div>
+      </div>
+
+      <div class="form-group">
+        <label for="input-enhet">Kjøpsenhet / pakking</label>
+        <select id="input-enhet">
+          <option value="sekk_40l">40 liter sekk</option>
+          <option value="sekk_60l">60 liter sekk</option>
+          <option value="sekk_80l">80 liter sekk</option>
+          <option value="storsekk_1000l" selected>1000 liter storsekk (pall)</option>
+          <option value="storsekk_1500l">1500 liter storsekk (pall)</option>
+          <option value="m3_stablet">1 m³ stablet ved</option>
+          <option value="m3_los">1 m³ løs ved (henger)</option>
+        </select>
+        <div class="label-desc" id="desc-enhet">1000 liter storsekk på pall: Løs fylling, volumfaktor 0,45 fastvirke per m³ (NS 4414).</div>
+      </div>
+
+      <div class="form-group">
+        <label for="input-vedpris">Pris for valgt enhet</label>
+        <div class="input-row">
+          <input type="number" id="input-vedpris" value="1800" min="10" max="20000" step="10">
+          <span class="input-unit">kroner</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="input-eldstad">Ildsted (forbrenningsteknologi)</label>
+        <select id="input-eldstad">
+          <option value="rentbrennende_etter_1998" selected>Rentbrennende ovn (75 %)</option>
+          <option value="gammel_ovn_for_1998">Gammel ovn før 1998 (50 %)</option>
+          <option value="apen_peis">Åpen peis (15 %)</option>
+        </select>
+        <div class="label-desc" id="desc-eldstad">Rentbrennende ovn (etter 1998 / NS 3058): 75 % virkningsgrad.</div>
+      </div>
+
+      <h2 style="margin-top: 1.5rem;">2. Strømpris og oppvarming</h2>
+
+      <div class="form-group">
+        <label>Strømpris-modell</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="strom-modus" value="norgespris" checked>
+            <span><strong>Norgespris</strong> (varslet fastpris + nettleie)</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="strom-modus" value="stromstotte">
+            <span><strong>Strømstøtte</strong> (timespotpris over innslagspunkt)</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="strom-modus" value="egen">
+            <span><strong>Egendefinert totalpris</strong> (din faktiske pris inkl. nett)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Delpanel: Norgespris -->
+      <div id="panel-norgespris" class="sub-panel">
+        <div class="form-group">
+          <label for="input-np-pris">Norgespris kraftledd</label>
+          <div class="input-row">
+            <input type="number" id="input-np-pris" value="0.56" step="0.01" min="0">
+            <span class="input-unit">kr/kWh inkl. mva</span>
+          </div>
+          <div class="note-box">
+            Standard 0,56 kr er forslaget i Statsbudsjettet for 2027 (56 øre/kWh inkl. mva). Tidligere pilot var 0,50 kr.
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="input-np-nett">Nettleie (variabelt energiledd + avgifter)</label>
+          <div class="input-row">
+            <input type="number" id="input-np-nett" value="0.40" step="0.01" min="0">
+            <span class="input-unit">kr/kWh</span>
+          </div>
+          <div class="label-desc">Nettleien må betales i tillegg til selve kraftprisen.</div>
+        </div>
+      </div>
+
+      <!-- Delpanel: Strømstøtte -->
+      <div id="panel-stromstotte" class="sub-panel" style="display: none;">
+        <div class="form-group">
+          <label for="input-ss-spot">Antatt spotpris på strøm</label>
+          <div class="input-row">
+            <input type="number" id="input-ss-spot" value="1.50" step="0.05" min="0">
+            <span class="input-unit">kr/kWh inkl. mva</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="input-ss-terskel">Innslagspunkt for strømstønad</label>
+          <div class="input-row">
+            <input type="number" id="input-ss-terskel" value="0.9125" step="0.0025" min="0">
+            <span class="input-unit">kr/kWh inkl. mva</span>
+          </div>
+          <div class="note-box">
+            Midlertidig forskrift om strømstønad fastsetter 73 øre/kWh eks. mva (91,25 øre/kWh inkl. 25 % mva).
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="input-ss-dekning">Kompensasjonsgrad over innslagspunkt</label>
+          <div class="input-row">
+            <input type="number" id="input-ss-dekning" value="90" step="5" min="0" max="100">
+            <span class="input-unit">%</span>
+          </div>
+          <div class="label-desc">Staten dekker 90 % av spotprisen over innslagspunktet.</div>
+        </div>
+        <div class="form-group">
+          <label for="input-ss-nett">Nettleie (variabelt ledd)</label>
+          <div class="input-row">
+            <input type="number" id="input-ss-nett" value="0.40" step="0.01" min="0">
+            <span class="input-unit">kr/kWh</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delpanel: Egen totalpris -->
+      <div id="panel-egen" class="sub-panel" style="display: none;">
+        <div class="form-group">
+          <label for="input-egen-total">Totalpris strøm (kraft + nettleie + avgifter)</label>
+          <div class="input-row">
+            <input type="number" id="input-egen-total" value="1.20" step="0.05" min="0">
+            <span class="input-unit">kr/kWh</span>
+          </div>
+          <div class="label-desc">Skriv inn totalprisen du ser på strømregningen per forbrukte kWh.</div>
+        </div>
+      </div>
+
+      <!-- Varmepumpe -->
+      <div class="form-group" style="margin-top: 1.25rem;">
+        <label class="checkbox-wrap">
+          <input type="checkbox" id="input-vp-aktivert">
+          <span>Sammenlign mot varmepumpe (ikke panelovn)</span>
+        </label>
+      </div>
+
+      <div id="panel-vp" class="sub-panel" style="display: none;">
+        <div class="form-group">
+          <label for="input-vp-cop">Varmepumpens effektfaktor (COP / SCOP)</label>
+          <div class="input-row">
+            <input type="number" id="input-vp-cop" value="2.8" step="0.1" min="1.0" max="6.0">
+            <span class="input-unit">fartor</span>
+          </div>
+          <div class="label-desc">
+            Enova/NOVAP oppgir typisk årsvarmefaktor (SCOP) på ca. 2,8 for luft-luft-varmepumper i Norge. På kalde vinterdager (-15 °C) synker den mot 2,0. Mildt vær gir 3,5–4,0.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Høyre spalte: Resultat -->
+    <div>
+      <div class="result-card">
+        <h2>Resultat og sammenligning</h2>
+
+        <div id="verdict-banner" class="result-verdict verdict-wood-expensive">
+          Beregner...
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-box">
+            <div class="metric-label">Nyttiggjort vedvarme</div>
+            <div class="metric-val" id="res-ved-kwh">0,00 kr</div>
+            <div class="metric-sub">per kWh varme</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Nyttiggjort strømvarme</div>
+            <div class="metric-val" id="res-strom-kwh">0,00 kr</div>
+            <div class="metric-sub">per kWh varme</div>
+          </div>
+        </div>
+
+        <div class="breakeven-banner">
+          <div class="breakeven-title">Breakeven-pris for veden</div>
+          <div class="breakeven-num" id="res-breakeven">0 kr</div>
+          <div class="breakeven-desc" id="res-breakeven-desc">
+            Veden må koste under dette beløpet for å gi billigere varme enn strømmen din.
+          </div>
+        </div>
+
+        <details>
+          <summary>Vis fysiske delberegninger</summary>
+          <table class="detail-table">
+            <tbody>
+              <tr>
+                <td>Fast trevirke i valgt volum:</td>
+                <td id="det-fast-m3">0,00 m³</td>
+              </tr>
+              <tr>
+                <td>Tørrstoffvekt:</td>
+                <td id="det-m-dry">0 kg</td>
+              </tr>
+              <tr>
+                <td>Totalvekt ved kjøp (inkl. vann):</td>
+                <td id="det-m-wet">0 kg</td>
+              </tr>
+              <tr>
+                <td>Vann i veden som må fordampes:</td>
+                <td id="det-m-water">0 kg</td>
+              </tr>
+              <tr>
+                <td>Teoretisk brennverdi rå ved:</td>
+                <td id="det-lhv">0,00 kWh/kg</td>
+              </tr>
+              <tr>
+                <td>Brutto energi i sekken/volumet:</td>
+                <td id="det-gross">0 kWh</td>
+              </tr>
+              <tr>
+                <td>Virkningsgrad i ildstedet:</td>
+                <td id="det-eff">0 %</td>
+              </tr>
+              <tr>
+                <td><strong>Reell nyttiggjort varme:</strong></td>
+                <td id="det-useful"><strong>0 kWh</strong></td>
+              </tr>
+              <tr>
+                <td>Effektiv strømpris inn i huset:</td>
+                <td id="det-el-tot">0,00 kr/kWh</td>
+              </tr>
+              <tr>
+                <td>Oppvarmingsfaktor (COP):</td>
+                <td id="det-el-cop">1,0</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <!-- Kjelder og dokumentasjon (kun eksterne lenker i denne seksjonen) -->
+  <section id="kjelder" class="kjelder-seksjon">
+    <h2>Kilder og fysisk grunnlag</h2>
+    <p style="margin-bottom: 0.75rem;">
+      Alle formler og koeffisienter er forankret i åpne vitenskapelige standarder og offentlige forskrifter:
+    </p>
+    <ul>
+      <li>
+        <strong>NIBIO (Norsk institutt for bioøkonomi) / Skog og landskap:</strong>
+        Tabeller over basisdensitet for tørrstoff (500 kg/m³ for bjørk, 380 kg/m³ for gran, 430 kg/m³ for furu, 580 kg/m³ for eik og 400 kg/m³ for osp) og effektiv nedre brennverdi for tørt trevirke (5,25–5,32 kWh/kg). Tilgjengelig via <a href="https://www.nibio.no">NIBIO</a>.
+      </li>
+      <li>
+        <strong>ISO 18125:2017 / IUPAC termodynamiske konstanter:</strong>
+        Fordampingsentalpi for flytende vann ved 25 °C er 2,442 MJ/kg = 0,6783 kWh/kg ≈ 0,68 kWh/kg. Hvert kilo vann i rå ved koster 0,68 kWh varme i fordampningstap før røykgassen forlater ildstedet. Dokumentert i <a href="https://www.iso.org">ISO 18125</a>.
+      </li>
+      <li>
+        <strong>Norsk Standard NS 4414 (Ved til brensel):</strong>
+        Definerer standard sekkestørrelser (40 L, 60 L, 80 L, storsekk 1000 L og 1500 L) og faste volumfaktorer: 0,65 fastkubikkmeter per m³ stablet ved, og 0,45 fastkubikkmeter per m³ løst fylt ved.
+      </li>
+      <li>
+        <strong>SINTEF Energi / NS 3058 / NS 3059:</strong>
+        Målte forbrenningsvirkningsgrader for rentbrennende vedovner (75 %), tradisjonelle ovner installert før byggeforskriftene i 1998 (~50 %) og åpne peiser (~15 %). Tilgjengelig hos <a href="https://www.sintef.no">SINTEF</a>.
+      </li>
+      <li>
+        <strong>Midlertidig forskrift om strømstønad (Regjeringen / NVE-RME):</strong>
+        Lovfestet innslagspunkt på 73 øre/kWh eks. mva (91,25 øre/kWh inkl. 25 % mva) og 90 % kompensasjon for spotpris over terskelen. Kunngjort på <a href="https://lovdata.no">Lovdata</a>.
+      </li>
+      <li>
+        <strong>Regjeringens forslag til Norgespris (Statsbudsjettet 2027):</strong>
+        Varslet fastpris på 56 øre/kWh inkl. mva (jf. referat hos <a href="https://www.norskved.no">Norsk Ved</a>).
+      </li>
+      <li>
+        <strong>Enova SF / Norsk Varmepumpeforening (NOVAP):</strong>
+        Typetall for luft-luft-varmepumpers årsvarmefaktor (SCOP ~2,8 i typisk norsk bolig; 2,0 i streng vinterkulde). Se veiledning hos <a href="https://www.enova.no">Enova</a>.
+      </li>
+    </ul>
+    <p style="font-size: 0.8rem; color: var(--color-muted);">
+      Kalkulatoren er fri og åpen kildekode. Tekst: CC BY 4.0 · Kode: MIT-lisens. Ingen informasjonskapsler (cookies), ingen sporing, ingen eksterne skript eller fonter.
+    </p>
+  </section>
+
+  <!-- Engelsk forklaring for styregjennomgang og engelskspråklege lesarar -->
+  <section lang="en" class="lang-en-section">
+    <h2>About this tool (English summary)</h2>
+    <p>
+      <strong>Vedkalkulatoren</strong> is a zero-tracking, standalone browser utility designed for Norwegian households to evaluate the genuine heating economics of domestic firewood against electrical heating.
+    </p>
+    <p style="margin-top: 0.5rem;">
+      Commercial calculators in Norway typically operate as marketing funnels for heat pump vendors or power suppliers, often assuming 100% theoretical combustion efficiency and ignoring grid tariffs (<em>nettleie</em>). This calculator models the full thermodynamic conversion chain:
+    </p>
+    <ul style="padding-left: 1.25rem; margin: 0.5rem 0;">
+      <li>Timber oven-dry basic density (ρ<sub>dry</sub> in kg/m³ solid) and net calorific value (H<sub>dry</sub> in kWh/kg).</li>
+      <li>Moisture penalty on a wet basis (w), deducting latent heat of vaporization (Δh<sub>vap</sub> = 0.68 kWh/kg H<sub>2</sub>O at 25 °C).</li>
+      <li>Packaging bulk-to-solid volumetric packing coefficients (0.45 for loose bags/pallets; 0.65 for stacked firewood).</li>
+      <li>Real-world stove combustion efficiency curves (75% for modern clean-burning stoves post-1998 TEK97; 50% for legacy stoves; 15% for open hearths).</li>
+      <li>Electricity regimes: Norwegian state subsidy (<em>strømstøtte</em>), the proposed flat-rate <em>Norgespris</em> (56 øre/kWh), and heat pump Seasonal Coefficient of Performance (SCOP).</li>
+    </ul>
+    <p style="margin-top: 0.5rem;">
+      The primary metric reported is the <strong>break-even price</strong>: the maximum retail bag or bulk price at which firewood competes with the user's effective electricity tariff per useful kilowatt-hour delivered into the room.
+    </p>
+  </section>
+
+  <footer>
+    <div class="meta-notice">
+      Laget av et KI-system. Et menneske er ansvarlig og leser svar. Tekst: CC BY 4.0 · Kode: MIT-lisens.
+    </div>
+  </footer>
+
+  <script>
+    /*
+     * Inlinede koeffisienter fra koeffisientar.json
+     * Utan eksterne førespurnader.
+     */
+    const KOEFFISIENTAR = {
+      treslag: {
+        bjork: { densitet: 500, brennverdi: 5.28, navn: "Bjørk" },
+        gran: { densitet: 380, brennverdi: 5.30, navn: "Gran" },
+        furu: { densitet: 430, brennverdi: 5.32, navn: "Furu" },
+        eik: { densitet: 580, brennverdi: 5.25, navn: "Eik" },
+        osp: { densitet: 400, brennverdi: 5.28, navn: "Osp" }
+      },
+      latent_varme_25c: 0.68,
+      pakkefaktorar: {
+        fast_per_stablet: 0.65,
+        fast_per_los: 0.45
+      },
+      enheter: {
+        sekk_40l: { volum_liter: 40, pakking: "los", navn: "40 L sekk" },
+        sekk_60l: { volum_liter: 60, pakking: "los", navn: "60 L sekk" },
+        sekk_80l: { volum_liter: 80, pakking: "los", navn: "80 L sekk" },
+        storsekk_1000l: { volum_liter: 1000, pakking: "los", navn: "1000 L storsekk" },
+        storsekk_1500l: { volum_liter: 1500, pakking: "los", navn: "1500 L storsekk" },
+        m3_stablet: { volum_liter: 1000, pakking: "stablet", navn: "m³ stablet ved" },
+        m3_los: { volum_liter: 1000, pakking: "los", navn: "m³ løs ved" }
+      },
+      eldstad: {
+        rentbrennende_etter_1998: { verknadsgrad: 0.75, navn: "Rentbrennende ovn" },
+        gammel_ovn_for_1998: { verknadsgrad: 0.50, navn: "Gammel ovn" },
+        apen_peis: { verknadsgrad: 0.15, navn: "Åpen peis" }
+      }
+    };
+
+    /**
+     * Rein kjernefunksjon for kalkuleringa.
+     * Kan køyrast uavhengig i Node.js eller i nettlesaren.
+     */
+    function beregnVedkalkulator(inputs, koeff) {
+      if (!koeff) koeff = KOEFFISIENTAR;
+
+      const sp = koeff.treslag[inputs.treslag];
+      if (!sp) throw new Error("Ukjent treslag: " + inputs.treslag);
+
+      const enhet = koeff.enheter[inputs.enhet];
+      if (!enhet) throw new Error("Ukjent enhet: " + inputs.enhet);
+
+      const eldstad = koeff.eldstad[inputs.eldstad];
+      if (!eldstad) throw new Error("Ukjent eldstad: " + inputs.eldstad);
+
+      const pakkefaktor = enhet.pakking === "stablet"
+        ? koeff.pakkefaktorar.fast_per_stablet
+        : koeff.pakkefaktorar.fast_per_los;
+
+      const fast_m3 = (enhet.volum_liter / 1000.0) * pakkefaktor;
+      const m_dry = fast_m3 * sp.densitet;
+
+      const w = inputs.fuktinnhold / 100.0;
+      if (w < 0 || w >= 1.0) throw new Error("Ugyldig fukt: " + inputs.fuktinnhold);
+
+      const m_wet = m_dry / (1.0 - w);
+      const m_water = m_wet - m_dry;
+
+      const lhv_w = sp.brennverdi * (1.0 - w) - koeff.latent_varme_25c * w;
+      const e_gross = m_wet * lhv_w;
+      const e_useful = e_gross * eldstad.verknadsgrad;
+
+      if (e_useful <= 0) throw new Error("Nyttiggjort energi er <= 0");
+
+      const kr_per_kwh_ved = inputs.pris_kr / e_useful;
+
+      // Straumprisberekning
+      let el_totalpris = 0.0;
+      if (inputs.strom_modus === "egen") {
+        el_totalpris = parseFloat(inputs.strom_detaljer.totalpris);
+      } else if (inputs.strom_modus === "norgespris") {
+        const p = parseFloat(inputs.strom_detaljer.pris);
+        const n = parseFloat(inputs.strom_detaljer.nettleie);
+        el_totalpris = p + n;
+      } else if (inputs.strom_modus === "stromstotte") {
+        const spot = parseFloat(inputs.strom_detaljer.spotpris);
+        const terskel = parseFloat(inputs.strom_detaljer.terskel);
+        const dekning = parseFloat(inputs.strom_detaljer.dekningsgrad);
+        const nett = parseFloat(inputs.strom_detaljer.nettleie);
+
+        let stotte = 0.0;
+        if (spot > terskel) {
+          stotte = (spot - terskel) * dekning;
+        }
+        el_totalpris = (spot - stotte) + nett;
+      } else {
+        throw new Error("Ukjent strom_modus: " + inputs.strom_modus);
+      }
+
+      const cop = inputs.bruk_varmepumpe ? parseFloat(inputs.varmepumpe_cop) : 1.0;
+      if (cop <= 0) throw new Error("Ugyldig COP: " + cop);
+
+      const kr_per_kwh_strom = el_totalpris / cop;
+      const breakeven_vedpris_kr = kr_per_kwh_strom * e_useful;
+
+      // Samanlikningssetning
+      let setning = "";
+      const diff = Math.abs(kr_per_kwh_ved - kr_per_kwh_strom);
+
+      if (diff < 0.005) {
+        setning = "Veden og strømmen koster omtrent det samme per nyttiggjort kWh (" +
+          kr_per_kwh_ved.toFixed(2).replace(".", ",") + " kr/kWh).";
+      } else if (kr_per_kwh_ved > kr_per_kwh_strom) {
+        const pst = Math.round(((kr_per_kwh_ved - kr_per_kwh_strom) / kr_per_kwh_ved) * 100);
+        setning = "Veden koster " + kr_per_kwh_ved.toFixed(2).replace(".", ",") + " kr/kWh og strømmen " +
+          kr_per_kwh_strom.toFixed(2).replace(".", ",") + " kr/kWh: Strøm er " + pst + " % billigere. " +
+          "Veden må koste under " + Math.round(breakeven_vedpris_kr) + " kr per " + enhet.navn + " for å lønne seg.";
+      } else {
+        const pst = Math.round(((kr_per_kwh_strom - kr_per_kwh_ved) / kr_per_kwh_strom) * 100);
+        const sparing = (kr_per_kwh_strom - kr_per_kwh_ved).toFixed(2).replace(".", ",");
+        setning = "Veden koster " + kr_per_kwh_ved.toFixed(2).replace(".", ",") + " kr/kWh og strømmen " +
+          kr_per_kwh_strom.toFixed(2).replace(".", ",") + " kr/kWh: Veden er " + pst + " % billigere enn strømmen " +
+          "(du sparer " + sparing + " kr per kWh varme).";
+      }
+
+      return {
+        kr_per_kwh_ved: kr_per_kwh_ved,
+        kr_per_kwh_strom: kr_per_kwh_strom,
+        breakeven_vedpris_kr: breakeven_vedpris_kr,
+        e_useful_kwh: e_useful,
+        setning: setning,
+        ved_detaljer: {
+          volum_liter: enhet.volum_liter,
+          pakkefaktor: pakkefaktor,
+          fast_m3: fast_m3,
+          m_dry_kg: m_dry,
+          m_wet_kg: m_wet,
+          m_water_kg: m_water,
+          lhv_w_kwh_per_kg: lhv_w,
+          e_gross_kwh: e_gross,
+          verknadsgrad: eldstad.verknadsgrad,
+          e_useful_kwh: e_useful
+        },
+        strom_detaljer: {
+          totalpris_per_kwh_strom: el_totalpris,
+          cop: cop,
+          kr_per_kwh_nyttig_varme: kr_per_kwh_strom
+        }
+      };
+    }
+
+    // Nettlesar-grensesnitt og oppdatering
+    if (typeof document !== "undefined") {
+      const elTreslag = document.getElementById("input-treslag");
+      const elFukt = document.getElementById("input-fukt");
+      const elValFukt = document.getElementById("val-fukt");
+      const elEnhet = document.getElementById("input-enhet");
+      const elVedpris = document.getElementById("input-vedpris");
+      const elEldstad = document.getElementById("input-eldstad");
+
+      const radierModus = document.querySelectorAll('input[name="strom-modus"]');
+      const panelNp = document.getElementById("panel-norgespris");
+      const panelSs = document.getElementById("panel-stromstotte");
+      const panelEgen = document.getElementById("panel-egen");
+
+      const elNpPris = document.getElementById("input-np-pris");
+      const elNpNett = document.getElementById("input-np-nett");
+
+      const elSsSpot = document.getElementById("input-ss-spot");
+      const elSsTerskel = document.getElementById("input-ss-terskel");
+      const elSsDekning = document.getElementById("input-ss-dekning");
+      const elSsNett = document.getElementById("input-ss-nett");
+
+      const elEgenTotal = document.getElementById("input-egen-total");
+
+      const elVpAktivert = document.getElementById("input-vp-aktivert");
+      const panelVp = document.getElementById("panel-vp");
+      const elVpCop = document.getElementById("input-vp-cop");
+
+      // Resultatelement
+      const elVerdict = document.getElementById("verdict-banner");
+      const elResVed = document.getElementById("res-ved-kwh");
+      const elResStrom = document.getElementById("res-strom-kwh");
+      const elResBreakeven = document.getElementById("res-breakeven");
+      const elResBreakevenDesc = document.getElementById("res-breakeven-desc");
+
+      // Detaljelement
+      const elDetFastM3 = document.getElementById("det-fast-m3");
+      const elDetMDry = document.getElementById("det-m-dry");
+      const elDetMWet = document.getElementById("det-m-wet");
+      const elDetMWater = document.getElementById("det-m-water");
+      const elDetLhv = document.getElementById("det-lhv");
+      const elDetGross = document.getElementById("det-gross");
+      const elDetEff = document.getElementById("det-eff");
+      const elDetUseful = document.getElementById("det-useful");
+      const elDetElTot = document.getElementById("det-el-tot");
+      const elDetElCop = document.getElementById("det-el-cop");
+
+      function hentValgtModus() {
+        for (let r of radierModus) {
+          if (r.checked) return r.value;
+        }
+        return "norgespris";
+      }
+
+      function oppdaterSynlegheit() {
+        const modus = hentValgtModus();
+        panelNp.style.display = (modus === "norgespris") ? "block" : "none";
+        panelSs.style.display = (modus === "stromstotte") ? "block" : "none";
+        panelEgen.style.display = (modus === "egen") ? "block" : "none";
+        panelVp.style.display = elVpAktivert.checked ? "block" : "none";
+      }
+
+      function reknUt() {
+        oppdaterSynlegheit();
+        elValFukt.textContent = elFukt.value + " %";
+
+        const treslagDesc = {
+          bjork: "Bjørk: 500 kg tørrstoff/m³, 5,28 kWh/kg. Bestemmer basisdensitet og brennverdi.",
+          gran: "Gran: 380 kg tørrstoff/m³, 5,30 kWh/kg. Bestemmer basisdensitet og brennverdi.",
+          furu: "Furu: 430 kg tørrstoff/m³, 5,32 kWh/kg. Bestemmer basisdensitet og brennverdi.",
+          eik: "Eik: 580 kg tørrstoff/m³, 5,25 kWh/kg. Bestemmer basisdensitet og brennverdi.",
+          osp: "Osp: 400 kg tørrstoff/m³, 5,28 kWh/kg. Bestemmer basisdensitet og brennverdi."
+        };
+        const enhetDesc = {
+          sekk_40l: "40 liter sekk: Løs fylling, volumfaktor 0,45 fastvirke per m³ (NS 4414).",
+          sekk_60l: "60 liter sekk: Løs fylling, volumfaktor 0,45 fastvirke per m³ (NS 4414).",
+          sekk_80l: "80 liter sekk: Løs fylling, volumfaktor 0,45 fastvirke per m³ (NS 4414).",
+          storsekk_1000l: "1000 liter storsekk på pall: Løs fylling, volumfaktor 0,45 fastvirke per m³ (NS 4414).",
+          storsekk_1500l: "1500 liter storsekk på pall: Løs fylling, volumfaktor 0,45 fastvirke per m³ (NS 4414).",
+          m3_stablet: "1 m³ stablet ved: Tett stabling, volumfaktor 0,65 fastvirke per m³ (NS 4414).",
+          m3_los: "1 m³ løs ved (henger): Løs oppfylling, volumfaktor 0,45 fastvirke per m³ (NS 4414)."
+        };
+        const eldstadDesc = {
+          rentbrennende_etter_1998: "Rentbrennende ovn (etter 1998 / NS 3058): 75 % virkningsgrad.",
+          gammel_ovn_for_1998: "Gammel ovn før 1998 (tradisjonelt trekk): 50 % virkningsgrad. Halvparten av varmen forsvinner ut pipa.",
+          apen_peis: "Åpen peis: 15 % virkningsgrad. Det meste av varmen forsvinner opp i pipeløpet."
+        };
+
+        const elDescTreslag = document.getElementById("desc-treslag");
+        const elDescEnhet = document.getElementById("desc-enhet");
+        const elDescEldstad = document.getElementById("desc-eldstad");
+        if (elDescTreslag && treslagDesc[elTreslag.value]) elDescTreslag.textContent = treslagDesc[elTreslag.value];
+        if (elDescEnhet && enhetDesc[elEnhet.value]) elDescEnhet.textContent = enhetDesc[elEnhet.value];
+        if (elDescEldstad && eldstadDesc[elEldstad.value]) elDescEldstad.textContent = eldstadDesc[elEldstad.value];
+
+        const modus = hentValgtModus();
+        const inputs = {
+          treslag: elTreslag.value,
+          fuktinnhold: parseFloat(elFukt.value),
+          enhet: elEnhet.value,
+          pris_kr: parseFloat(elVedpris.value) || 0,
+          eldstad: elEldstad.value,
+          strom_modus: modus,
+          strom_detaljer: {
+            pris: parseFloat(elNpPris.value) || 0,
+            nettleie: (modus === "norgespris") ? (parseFloat(elNpNett.value) || 0) : (parseFloat(elSsNett.value) || 0),
+            spotpris: parseFloat(elSsSpot.value) || 0,
+            terskel: parseFloat(elSsTerskel.value) || 0,
+            dekningsgrad: (parseFloat(elSsDekning.value) || 0) / 100.0,
+            totalpris: parseFloat(elEgenTotal.value) || 0
+          },
+          bruk_varmepumpe: elVpAktivert.checked,
+          varmepumpe_cop: parseFloat(elVpCop.value) || 1.0
+        };
+
+        try {
+          const res = beregnVedkalkulator(inputs, KOEFFISIENTAR);
+
+          elVerdict.textContent = res.setning;
+          elVerdict.className = "result-verdict " + (
+            Math.abs(res.kr_per_kwh_ved - res.kr_per_kwh_strom) < 0.005 ? "verdict-equal" :
+            (res.kr_per_kwh_ved > res.kr_per_kwh_strom ? "verdict-wood-expensive" : "verdict-wood-cheap")
+          );
+
+          elResVed.textContent = res.kr_per_kwh_ved.toFixed(2).replace(".", ",") + " kr";
+          elResStrom.textContent = res.kr_per_kwh_strom.toFixed(2).replace(".", ",") + " kr";
+
+          const beRound = Math.round(res.breakeven_vedpris_kr);
+          elResBreakeven.textContent = beRound.toLocaleString("nb-NO") + " kr";
+          elResBreakevenDesc.textContent = "Veden må koste under " + beRound.toLocaleString("nb-NO") +
+            " kr for " + KOEFFISIENTAR.enheter[inputs.enhet].navn + " for å lønne seg.";
+
+          // Detaljar
+          elDetFastM3.textContent = res.ved_detaljer.fast_m3.toFixed(3).replace(".", ",") + " m³";
+          elDetMDry.textContent = Math.round(res.ved_detaljer.m_dry_kg).toLocaleString("nb-NO") + " kg";
+          elDetMWet.textContent = Math.round(res.ved_detaljer.m_wet_kg).toLocaleString("nb-NO") + " kg";
+          elDetMWater.textContent = Math.round(res.ved_detaljer.m_water_kg).toLocaleString("nb-NO") + " kg";
+          elDetLhv.textContent = res.ved_detaljer.lhv_w_kwh_per_kg.toFixed(3).replace(".", ",") + " kWh/kg";
+          elDetGross.textContent = Math.round(res.ved_detaljer.e_gross_kwh).toLocaleString("nb-NO") + " kWh";
+          elDetEff.textContent = Math.round(res.ved_detaljer.verknadsgrad * 100) + " %";
+          elDetUseful.textContent = Math.round(res.e_useful_kwh).toLocaleString("nb-NO") + " kWh";
+          elDetElTot.textContent = res.strom_detaljer.totalpris_per_kwh_strom.toFixed(2).replace(".", ",") + " kr/kWh";
+          elDetElCop.textContent = res.strom_detaljer.cop.toFixed(1).replace(".", ",");
+
+        } catch (err) {
+          elVerdict.textContent = "Feil i inndata: " + err.message;
+          elVerdict.className = "result-verdict verdict-wood-expensive";
+        }
+      }
+
+      // Lyttarar
+      const alleInput = [
+        elTreslag, elFukt, elEnhet, elVedpris, elEldstad,
+        elNpPris, elNpNett, elSsSpot, elSsTerskel, elSsDekning, elSsNett,
+        elEgenTotal, elVpAktivert, elVpCop
+      ];
+
+      alleInput.forEach(function (elem) {
+        elem.addEventListener("input", reknUt);
+        elem.addEventListener("change", reknUt);
+      });
+
+      radierModus.forEach(function (rad) {
+        rad.addEventListener("change", reknUt);
+      });
+
+      // Standard enhetspris-justering når brukar byter enhet
+      elEnhet.addEventListener("change", function () {
+        const e = elEnhet.value;
+        if (e === "sekk_40l") elVedpris.value = "99";
+        else if (e === "sekk_60l") elVedpris.value = "139";
+        else if (e === "sekk_80l") elVedpris.value = "179";
+        else if (e === "storsekk_1000l") elVedpris.value = "1800";
+        else if (e === "storsekk_1500l") elVedpris.value = "2500";
+        else if (e === "m3_stablet") elVedpris.value = "1500";
+        else if (e === "m3_los") elVedpris.value = "1300";
+        reknUt();
+      });
+
+      // Fyrste køyring ved innlasting
+      reknUt();
+    }
+
+    // Eksporter for Node.js-testing dersom i eit module/CommonJS-miljø
+    if (typeof module !== "undefined" && module.exports) {
+      module.exports = {
+        KOEFFISIENTAR: KOEFFISIENTAR,
+        beregnVedkalkulator: beregnVedkalkulator
+      };
+    }
+  </script>
+</body>
+</html>
