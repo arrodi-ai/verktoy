@@ -2,7 +2,7 @@
 
 A poster of the daylight through a whole year, for any place and any year
 
-Make a poster of a year's daylight for your own place: type a place or coordinates, choose the year and the language (Norwegian, English, Swedish, Danish, German or Spanish), and download it as PDF or PNG. Everything is calculated in your browser, with no calls to other servers and no tracking.
+Make a poster of a year's daylight for your own place: type a place or coordinates, choose the year and the language (Norwegian, English, Swedish, Danish, German or Spanish), and download it as PDF or PNG. Everything is calculated in your browser, and what you type is not sent anywhere. The file here loads nothing from elsewhere. On arrodi.pages.dev the site also counts visits with Cloudflare Web Analytics.
 
 Use it on the site: https://arrodi.pages.dev/work/the-year-in-light-generator
 
